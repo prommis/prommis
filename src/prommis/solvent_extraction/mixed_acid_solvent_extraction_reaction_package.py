@@ -1,0 +1,365 @@
+#####################################################################################################
+# “PrOMMiS” was produced under the DOE Process Optimization and Modeling for Minerals Sustainability
+# (“PrOMMiS”) initiative, and is copyright (c) 2023-2026 by the software owners: The Regents of the
+# University of California, through Lawrence Berkeley National Laboratory, et al. All rights reserved.
+# Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
+#####################################################################################################
+
+r"""
+Reaction package for solvent extraction of rare earth elements using DEHPA as extractant
+with TBP as a phase modifier.
+----------------------------------------------------------------------------------------
+
+Author: Arkoprabho Dasgupta
+
+This is an example of how to write a reaction package for rare earth elements involved in
+solvent extraction.
+
+"""
+
+from pyomo.common.config import ConfigValue
+from pyomo.environ import Constraint, Param, Set, Var, units, log10
+
+from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
+from idaes.core.base import property_meta
+from idaes.core.util.misc import add_object_reference
+from idaes.core.scaling import CustomScalerBase
+
+__author__ = "Arkoprabho Dasgupta, Douglas Allan"
+
+
+class MixedAcidSolventExtractionReactionScaler(CustomScalerBase):
+    """
+    Scaler for the solvent extraction reaction package.
+    """
+
+    DEFAULT_SCALING_FACTORS = {}
+
+    def variable_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        aq_block = model.parent_block().aqueous[model.index()]
+        org_block = model.parent_block().organic[model.index()]
+        for e in model.params.element_list:
+            sf_aq = self.get_scaling_factor(aq_block.conc_mol_comp[e], default=1)
+
+            sf_org = self.get_scaling_factor(
+                org_block.conc_mol_comp[model.params.organic_name[e]], default=1
+            )
+            self.set_variable_scaling_factor(
+                model.distribution_coefficient[e], sf_org / sf_aq, overwrite=overwrite
+            )
+
+    def constraint_scaling_routine(
+        self, model, overwrite: bool = False, submodel_scalers: dict = None
+    ):
+        for e in model.params.element_list:
+            self.scale_constraint_by_component(
+                model.distribution_expression_constraint[e],
+                model.distribution_coefficient[e],
+                overwrite=overwrite,
+            )
+
+
+# -----------------------------------------------------------------------------
+# Solvent extraction property package
+@declare_process_block_class("MixedAcidSolventExtractionReactions")
+class MixedAcidSolventExtractionReactionsData(
+    ProcessBlockData, property_meta.HasPropertyClassMetadata
+):
+    """
+    Reaction package for the solvent extraction of rare earth elements from acidic aqueous
+    solution using organic extractant DEHPA and TBP as phase modifier.
+
+    Rare earth elements : La, Pr, Ce, Dy, Nd, Sm, Gd, Y
+    Impurities : Al, Ca, Fe, Sc
+
+    This reaction package is used by the solvent extraction model. It assumes that there are
+    two streams involved in the mass transfer, the aqueous liquid phase named as 'liquid' in
+    the package, and the organic phase named as 'organic'.
+    The material transfer amount is accounted through the term of the heterogeneous reaction
+    extent term in the solvent extraction model. The amount of material transfer is quantified
+    through the use of distribution coefficient.
+
+    The distribution coefficient is defined as the ratio of the concentration in the organic
+    phase to the concentration in the aqueous phase.
+
+    D[i] = C_organic[i]/C_aqueous[i]   i = REEs and Impurities
+
+    This reaction package is for a system where DEHPA acts as the main extractant and TBP acts
+    as the phase modifier in the system.
+
+    There are impurities considered in the system. We do not have adequate data points for
+    the impurities, so their distribution coefficient values has been calculated from REESim file
+    and assumed constant.
+
+    For the rare earth elements, the distribution correlation can be expressed in the following
+    correlation.
+
+    logD[i] = m[i]*pH + B[i]   i = REEs
+
+    These correlations have been taken from 'PROCESSES RESEARCH PROJECT REPORT Production of
+    salable rare earths products from coal and coal byproducts using advanced separation processes
+    Phase 1'.
+
+    The parameters for each of the components m[i],B[i] can be expressed as an empirical function
+    of the extractant dosage (volume percentage) of the system.
+
+    m[i] = m0[i] + m1[i]*dosage
+    B[i] = B0[i] + B1[i]*log(dosage)
+
+    The dosage is set by the extractant_dosage variable on the organic state block.
+
+    The data points for these empirical correlations have been taken from the phase 1 report.
+    Certain rare earth elements do not have adequate data, hence certain functionalities could
+    not be written here.
+
+    """
+
+    def build(self):
+        super().build()
+
+        self._reaction_block_class = MixedAcidSolventExtractionReactionsBlock
+
+        REE_list = ["La_3+", "Y_3+", "Pr_3+", "Ce_3+", "Nd_3+", "Sm_3+", "Gd_3+", "Dy_3+"]
+        Impurity_list = ["Al_3+", "Ca_2+", "Fe_3+", "Sc_3+"]
+
+        index_list = [f"{e}_mass_transfer" for e in (REE_list + Impurity_list)]
+        element_list = REE_list + Impurity_list
+
+        self.element_list = Set(initialize=element_list)
+        self.reaction_idx = Set(initialize=index_list)
+        self.organic_name = {e: f"{e.split('_')[0]}_o" for e in element_list}
+
+        reaction_stoichiometry = {}
+
+        for e in REE_list:
+            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
+            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+            reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 3
+            reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
+
+        for e in Impurity_list:
+            if e == "Ca_2+":
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 2
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -2
+            else:
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", e)] = -1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", self.organic_name[e])] = 1
+                reaction_stoichiometry[(f"{e}_mass_transfer", "liquid", "H_+")] = 3
+                reaction_stoichiometry[(f"{e}_mass_transfer", "organic", "DEHPA")] = -3
+
+        self.reaction_stoichiometry = reaction_stoichiometry
+
+        self.m0 = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": 0.30916,
+                "Y_3+": 1.63166,
+                "Gd_3+": 1.0225,
+                "Dy_3+": 1.70783,
+                "Sm_3+": 0.81233,
+                "Nd_3+": 0.31183,
+                "La_3+": 0.54,
+                "Pr_3+": 0.29,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
+            },
+        )
+
+        self.m1 = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": 0.04816,
+                "Y_3+": 0.15166,
+                "Gd_3+": 0.0195,
+                "Dy_3+": 0.06443,
+                "Sm_3+": -0.02247,
+                "Nd_3+": 0.03763,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
+            },
+        )
+
+        self.B0 = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": -1.66021,
+                "Y_3+": -2.12601,
+                "Gd_3+": -2.24143,
+                "Dy_3+": -2.42226,
+                "Sm_3+": -2.12172,
+                "Nd_3+": -1.62372,
+                "La_3+": -1.93,
+                "Pr_3+": -1.48,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
+            },
+        )
+
+        self.B1 = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": -0.38599,
+                "Y_3+": 0.26612,
+                "Gd_3+": 0.03065,
+                "Dy_3+": -0.02538,
+                "Sm_3+": 0.17414,
+                "Nd_3+": -0.38096,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 0,
+                "Al_3+": 0,
+                "Ca_2+": 0,
+                "Fe_3+": 0,
+            },
+        )
+
+        self.K1 = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": 0,
+                "Y_3+": 0,
+                "Gd_3+": 0,
+                "Dy_3+": 0,
+                "Sm_3+": 0,
+                "Nd_3+": 0,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 632.4976,
+                "Al_3+": 0.0531,
+                "Ca_2+": 0.0658,
+                "Fe_3+": 0.1496,
+            },
+        )
+
+        self.K_corr = Param(
+            self.element_list,
+            initialize={
+                "Ce_3+": 0,
+                "Y_3+": 0,
+                "Gd_3+": 0,
+                "Dy_3+": 0,
+                "Sm_3+": 0,
+                "Nd_3+": 0,
+                "La_3+": 0,
+                "Pr_3+": 0,
+                "Sc_3+": 1,
+                "Al_3+": 1,
+                "Ca_2+": 1,
+                "Fe_3+": 1,
+            },
+        )
+
+    @classmethod
+    def define_metadata(cls, obj):
+        obj.add_default_units(
+            {
+                "time": units.hour,
+                "length": units.m,
+                "mass": units.kg,
+                "amount": units.mol,
+                "temperature": units.K,
+            }
+        )
+
+    @property
+    def reaction_block_class(self):
+        if self._reaction_block_class is not None:
+            return self._reaction_block_class
+        else:
+            raise AttributeError(
+                "{} has not assigned a ReactionBlock class to be associated "
+                "with this reaction package. Please contact the developer of "
+                "the reaction package.".format(self.name)
+            )
+
+    def build_reaction_block(self, *args, **kwargs):
+        """
+        Methods to construct a ReactionBlock associated with this
+        ReactionParameterBlock. This will automatically set the parameters
+        construction argument for the ReactionBlock.
+
+        Returns:
+            ReactionBlock
+
+        """
+        default = kwargs.pop("default", {})
+        initialize = kwargs.pop("initialize", {})
+
+        if initialize == {}:
+            default["parameters"] = self
+        else:
+            for i in initialize.keys():
+                initialize[i]["parameters"] = self
+
+        return self.reaction_block_class(
+            *args, **kwargs, **default, initialize=initialize
+        )
+
+
+class _MixedAcidSolventExtractionReactionsBlock(ProcessBlock):
+    default_scaler = MixedAcidSolventExtractionReactionScaler
+
+
+@declare_process_block_class(
+    "MixedAcidSolventExtractionReactionsBlock", block_class=_MixedAcidSolventExtractionReactionsBlock
+)
+class SolventExtractionReactionsData(ProcessBlockData):
+    default_scaler = MixedAcidSolventExtractionReactionScaler
+
+    # Create Class ConfigBlock
+    CONFIG = ProcessBlockData.CONFIG()
+    CONFIG.declare(
+        "parameters",
+        ConfigValue(
+            # TODO
+            # domain=is_reaction_parameter_block,
+            description="""A reference to an instance of the Heterogeneous Reaction Parameter
+    Block associated with this property package.""",
+        ),
+    )
+
+    def build(self):
+        """
+        Reaction block for solvent extraction of rare earth elements.
+
+        """
+        super().build()
+
+        add_object_reference(self, "_params", self.config.parameters)
+
+        self.distribution_coefficient = Var(
+            self.params.element_list,
+            initialize=1,
+        )
+
+        def distribution_expression(b, e):
+            aq_block = b.parent_block().aqueous[b.index()]
+            org_block = b.parent_block().organic[b.index()]
+
+            pH = aq_block.pH_phase["liquid"]
+            dosage = org_block.extractant_dosage
+
+            return (b.distribution_coefficient[e]) == 10 ** (
+                (b.params.m0[e] + dosage * b.params.m1[e]) * pH
+                + (b.params.B0[e] + b.params.B1[e] * log10(dosage))
+            ) * (1 - b.params.K_corr[e]) + b.params.K_corr[e] * b.params.K1[e]
+
+        self.distribution_expression_constraint = Constraint(
+            self.params.element_list, rule=distribution_expression
+        )
+
+    @property
+    def params(self):
+        return self._params

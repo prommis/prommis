@@ -196,56 +196,73 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
         # Liquid feed state
         self.leach.liquid_inlet.flow_vol.fix(224.3 * units.L / units.hour)
         self.leach.liquid_inlet.conc_mass_comp.fix(1e-10 * units.mg / units.L)
-        self.leach.liquid_inlet.conc_mass_comp[:, "H2O"].fix(1e6 * units.mg / units.L)
-        self.leach.liquid_inlet.conc_mass_comp[:, "H"].fix(
-            2 * 0.05 * 1e3 * units.mg / units.L
-        )
-        self.leach.liquid_inlet.conc_mass_comp[:, "HSO4"].fix(1e-8 * units.mg / units.L)
-        self.leach.liquid_inlet.conc_mass_comp[:, "SO4"].fix(
-            0.05 * 96e3 * units.mg / units.L
-        )
+        for t in self.time:
+            self.leach.liquid_inlet.conc_mass_comp[t, "H2O"].fix(
+                1e6 * units.mg / units.L
+            )
+            if self.config.use_mixed_acid_properties:
+                self.leach.liquid_inlet.conc_mass_comp[t, "H_+"].fix(
+                    2 * 0.05 * 1e3 * units.mg / units.L
+                )
+                self.leach.liquid_inlet.conc_mass_comp[t, "HSO4_-"].fix(
+                    1e-8 * units.mg / units.L
+                )
+                self.leach.liquid_inlet.conc_mass_comp[t, "SO4_2-"].fix(
+                    0.05 * 96e3 * units.mg / units.L
+                )
+            else:
+                self.leach.liquid_inlet.conc_mass_comp[t, "H"].fix(
+                    2 * 0.05 * 1e3 * units.mg / units.L
+                )
+                self.leach.liquid_inlet.conc_mass_comp[t, "HSO4"].fix(
+                    1e-8 * units.mg / units.L
+                )
+                self.leach.liquid_inlet.conc_mass_comp[t, "SO4"].fix(
+                    0.05 * 96e3 * units.mg / units.L
+                )
 
         # Solid feed state
         self.leach.solid_inlet.flow_mass.fix(22.68 * units.kg / units.hour)
-        self.leach.solid_inlet.mass_frac_comp[:, "inerts"].fix(
-            0.6952 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Al2O3"].fix(
-            0.237 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Fe2O3"].fix(
-            0.0642 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "CaO"].fix(
-            3.31e-3 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Sc2O3"].fix(
-            2.77966e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Y2O3"].fix(
-            3.28653e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "La2O3"].fix(
-            6.77769e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Ce2O3"].fix(
-            0.000156161 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Pr2O3"].fix(
-            1.71438e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Nd2O3"].fix(
-            6.76618e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Sm2O3"].fix(
-            1.47926e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Gd2O3"].fix(
-            1.0405e-05 * units.kg / units.kg
-        )
-        self.leach.solid_inlet.mass_frac_comp[:, "Dy2O3"].fix(
-            7.54827e-06 * units.kg / units.kg
-        )
+        for t in self.time:
+            self.leach.solid_inlet.mass_frac_comp[t, "inerts"].fix(
+                0.6952 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Al2O3"].fix(
+                0.237 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Fe2O3"].fix(
+                0.0642 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "CaO"].fix(
+                3.31e-3 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Sc2O3"].fix(
+                2.77966e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Y2O3"].fix(
+                3.28653e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "La2O3"].fix(
+                6.77769e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Ce2O3"].fix(
+                0.000156161 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Pr2O3"].fix(
+                1.71438e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Nd2O3"].fix(
+                6.76618e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Sm2O3"].fix(
+                1.47926e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Gd2O3"].fix(
+                1.0405e-05 * units.kg / units.kg
+            )
+            self.leach.solid_inlet.mass_frac_comp[t, "Dy2O3"].fix(
+                7.54827e-06 * units.kg / units.kg
+            )
 
     def reduce_dae_index(self, t0=None):
         if t0 is None:
@@ -368,10 +385,16 @@ class CocurrentSlurryLeachingFlowsheetData(FlowsheetBlockData):
 
         liquid_scaler = self.leach.mscontactor.liquid.default_scaler()
         liquid_scaler.default_scaling_factors["flow_vol"] = 1 / 224.3
-        liquid_scaler.default_scaling_factors["conc_mass_comp[Ce]"] = 1 / 5
-        liquid_scaler.default_scaling_factors["conc_mass_comp[Nd]"] = 1 / 2
-        liquid_scaler.default_scaling_factors["conc_mass_comp[La]"] = 1
-        liquid_scaler.default_scaling_factors["conc_mass_comp[SO4]"] = 1e-3
+        if self.config.use_mixed_acid_properties:
+            liquid_scaler.default_scaling_factors["conc_mass_comp[Ce_3+]"] = 1 / 5
+            liquid_scaler.default_scaling_factors["conc_mass_comp[Nd_3+]"] = 1 / 2
+            liquid_scaler.default_scaling_factors["conc_mass_comp[La_3+]"] = 1
+            liquid_scaler.default_scaling_factors["conc_mass_comp[SO4_2-]"] = 1e-3
+        else:
+            liquid_scaler.default_scaling_factors["conc_mass_comp[Ce]"] = 1 / 5
+            liquid_scaler.default_scaling_factors["conc_mass_comp[Nd]"] = 1 / 2
+            liquid_scaler.default_scaling_factors["conc_mass_comp[La]"] = 1
+            liquid_scaler.default_scaling_factors["conc_mass_comp[SO4]"] = 1e-3
 
         submodel_scalers = ComponentMap()
         submodel_scalers[self.leach.mscontactor.liquid_inlet_state] = liquid_scaler

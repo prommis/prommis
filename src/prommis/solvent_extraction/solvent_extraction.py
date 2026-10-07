@@ -414,10 +414,10 @@ class SolventExtractionData(UnitModelBlockData):
             dynamic=self.config.dynamic,
         )
 
+        # TODO This constraint should live on the heterogeneous reaction
+        # block, not the SX block.
         def distribution_ratio_rule(b, t, s, e):
             rxns = b.config.heterogeneous_reaction_package
-            # TODO do we want to deprecate using a reaction package
-            # without defining alias dictionaries?
             if hasattr(rxns, "aqueous_aliases"):
                 aq_species = rxns.aqueous_aliases[e]
             else:

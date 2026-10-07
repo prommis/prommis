@@ -24,16 +24,31 @@ from prommis.util import copy_first_steady_state
 from prommis.leaching.leach_flowsheet import CocurrentSlurryLeachingFlowsheet
 
 
+@pytest.mark.parametrize("use_mixed_acid_properties", [False, True], scope="class")
 @pytest.mark.parametrize("number_of_tanks", [1, 2], scope="class")
 @pytest.mark.parametrize("has_holdup", [False, True], scope="class")
 class TestSteadyStateModel:
     @pytest.fixture(scope="class")
     @classmethod
-    def model(cls, has_holdup, number_of_tanks):
+    def model(cls, has_holdup, number_of_tanks, use_mixed_acid_properties):
         m = ConcreteModel()
         m.fs = CocurrentSlurryLeachingFlowsheet(
-            has_holdup=has_holdup, number_of_tanks=number_of_tanks
+            has_holdup=has_holdup,
+            dynamic=False,
+            number_of_tanks=number_of_tanks,
+            use_mixed_acid_properties=use_mixed_acid_properties,
         )
+        if use_mixed_acid_properties:
+            # The sulfuric acid leaching properties use molecular weights
+            # with fewer significant figures than the mixed acid properties,
+            # which then leads to a discrepancy in the model solution.
+            # Use versions with fewer significant figures here to make sure
+            # that the models are structurally equivalent.
+            m.fs.leach_soln.mw["H2O"] = 18e-3
+            m.fs.leach_soln.mw["H_+"] = 1e-3
+            m.fs.leach_soln.mw["HSO4_-"] = 97e-3
+            m.fs.leach_soln.mw["SO4_2-"] = 96e-3
+
         m.fs.scale_model()
 
         return m
@@ -125,48 +140,84 @@ class TestSteadyStateModel:
         initializer.initialize(model.fs)
 
         solver = get_solver("ipopt_v2")
-        results = solver.solve(model, tee=False)
+        results = solver.solve(model, tee=True)
 
         assert_optimal_termination(results)
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, model, has_holdup, number_of_tanks):
+    def test_numerical_issues(
+        self, model, has_holdup, number_of_tanks, use_mixed_acid_properties
+    ):
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
-        if number_of_tanks == 1:
-            if has_holdup:
-                assert jacobian_cond(model, scaled=False) == pytest.approx(
-                    6.243792e12, rel=1e-3
-                )
-                assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    59103.1, rel=1e-3
-                )
+        if use_mixed_acid_properties:
+            if number_of_tanks == 1:
+                if has_holdup:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        6.243792e12, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        67334.02, rel=1e-3
+                    )
+                else:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        6.234582e12, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        5106.91, rel=1e-3
+                    )
+            elif number_of_tanks == 2:
+                if has_holdup:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        1.15080e13, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        159984.73, rel=1e-3
+                    )
+                else:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        1.14913e13, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        12082.75, rel=1e-3
+                    )
             else:
-                assert jacobian_cond(model, scaled=False) == pytest.approx(
-                    6.234582e12, rel=1e-3
-                )
-                assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    3827.42, rel=1e-3
-                )
-        elif number_of_tanks == 2:
-            if has_holdup:
-                assert jacobian_cond(model, scaled=False) == pytest.approx(
-                    1.15080e13, rel=1e-3
-                )
-                assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    1.45178e5, rel=1e-3
-                )
-            else:
-                assert jacobian_cond(model, scaled=False) == pytest.approx(
-                    1.14913e13, rel=1e-3
-                )
-                assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    9657.39, rel=1e-3
-                )
+                raise AssertionError("Invalid number of tanks given.")
         else:
-            raise AssertionError("Invalid number of tanks given.")
+            if number_of_tanks == 1:
+                if has_holdup:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        6.243792e12, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        59103.1, rel=1e-3
+                    )
+                else:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        6.234582e12, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        3827.42, rel=1e-3
+                    )
+            elif number_of_tanks == 2:
+                if has_holdup:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        1.15080e13, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        1.45178e5, rel=1e-3
+                    )
+                else:
+                    assert jacobian_cond(model, scaled=False) == pytest.approx(
+                        1.14913e13, rel=1e-3
+                    )
+                    assert jacobian_cond(model, scaled=True) == pytest.approx(
+                        9657.39, rel=1e-3
+                    )
+            else:
+                raise AssertionError("Invalid number of tanks given.")
 
     @pytest.mark.component
     @pytest.mark.solver

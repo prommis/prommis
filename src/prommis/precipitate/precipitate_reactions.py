@@ -54,7 +54,7 @@ class OxalatePrecipitationReactionsScaler(CustomScalerBase):
 class OxalatePrecipitationReactionsData(
     ProcessBlockData, property_meta.HasPropertyClassMetadata
 ):
-    """
+    r"""
     Reaction package for heterogeneous reactions involved in oxalate precipitation of
     REEs from solid West Kentucky No. 13 coal refuse using oxalic acid.
 

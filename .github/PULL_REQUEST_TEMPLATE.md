@@ -13,6 +13,7 @@
 - [ ] Documentation
 - [ ] Tests
 - [ ] Diagnostic tests for models
+- [ ] report() method (new or updated unit models)
 
 ### Legal Acknowledgement
 

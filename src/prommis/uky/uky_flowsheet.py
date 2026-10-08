@@ -199,11 +199,12 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 
 from prommis.leaching.mixed_acid_leach_reactions import MixedAcidLeachingReactionParameterBlock
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
-from prommis.precipitate.precipitate_solids_properties_isotherm import PrecipitateParameters
-from prommis.precipitate.precipitator_isotherm import (
-    OxalatePrecipitator,
-    OxalatePrecipitatorInitializer,
-)
+from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+# from prommis.precipitate.precipitator_isotherm import (
+#     OxalatePrecipitator,
+#     OxalatePrecipitatorInitializer,
+# )
+from prommis.precipitate.precipitator import Precipitator
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
 from prommis.properties.translator_sx_to_leach import TranslatorSXLeach
@@ -554,19 +555,10 @@ def build():
     m.fs.properties_solid = PrecipitateParameters()
     m.fs.precip_rxns = OxalatePrecipitationReactions()
 
-    m.fs.precipitator = OxalatePrecipitator(
-        number_of_tanks=1,
-        liquid_phase={
-            "property_package": m.fs.precip_soln,
-            "has_energy_balance": False,
-            "has_pressure_balance": False,
-        },
-        solid_phase={
-            "property_package": m.fs.properties_solid,
-            "has_energy_balance": False,
-            "has_pressure_balance": False,
-        },
-        reaction_package=m.fs.precip_rxns,
+    m.fs.precipitator = Precipitator(
+        property_package_aqueous=m.fs.precip_soln,
+        property_package_precipitate=m.fs.properties_solid,
+        make_volume_balance_constraint=False,
     )
 
     m.fs.sl_sep2 = SLSeparator(
@@ -795,7 +787,7 @@ def set_scaling(m):
     sx_properties_scaler = m.fs.sx_soln.default_state_scaler_class()
     organic_properties_scaler = m.fs.prop_o.default_state_scaler_class()
     precip_properties_scaler = m.fs.precip_soln.default_state_scaler_class()
-    solid_properties_scaler = m.fs.properties_solid.default_state_scaler_class()
+    # solid_properties_scaler = m.fs.properties_solid.default_state_scaler_class()
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
     # These are the default scaling factors set by iscale in mixed_acid_properties
@@ -817,7 +809,7 @@ def set_scaling(m):
     m.fs.sx_soln.default_state_scaler_object = leach_properties_scaler
     m.fs.prop_o.default_state_scaler_object = organic_properties_scaler
     m.fs.precip_soln.default_state_scaler_object = precip_properties_scaler
-    m.fs.properties_solid.default_state_scaler_object = solid_properties_scaler
+    # m.fs.properties_solid.default_state_scaler_object = solid_properties_scaler
     m.fs.prop_gas.default_state_scaler_object = vapor_properties_scaler
 
     # Also use global mutation to change the max and min scaling factors
@@ -1041,8 +1033,9 @@ def set_operating_conditions(m, DEHPA_dosage=0.2):
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 
     # Fix precipitator outlet temperature and HRT
-    m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
-    m.fs.precipitator.hydraulic_retention_time.fix(2)
+    m.fs.precipitator.precipitate_state_block[0].temperature.fix(348.15 * units.K)
+    # m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
+    # m.fs.precipitator.hydraulic_retention_time.fix(2)
 
     # Roaster gas feed
     m.fs.roaster.deltaP.fix(0)
@@ -1283,11 +1276,6 @@ def initialize_system(m):
         m.fs.solex_cleaner_strip,
     ]
 
-    initializer_precip = OxalatePrecipitatorInitializer()
-    precip_units = [
-        # m.fs.precipitator,
-    ]
-
     initializer_bt = BlockTriangularizationInitializer()
 
     def seed_unset_vars(blk, default=1.0):
@@ -1366,29 +1354,29 @@ def initialize_system(m):
 
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        elif unit == m.fs.precipitator:
-            _log.info(f"Manually initializing {unit}")
-            m.fs.precipitator.aqueous_inlet.flow_vol.fix()
-            m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
-            m.fs.precipitator.aqueous_inlet.temperature.fix()
-            m.fs.precipitator.aqueous_inlet.pressure.fix()
-
-            m.fs.precipitator.hydraulic_retention_time[0].fix()
-            m.fs.precipitator.precipitate_outlet.temperature.fix()
-
-            seed_unset_vars(m.fs.precipitator)
-            seed_leach_liquid_states(m.fs.precipitator)
-
-            solver = get_solver()
-            solver.solve(m.fs.precipitator, tee=True)
-
-            m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
-            m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
-            m.fs.precipitator.aqueous_inlet.temperature.unfix()
-            m.fs.precipitator.aqueous_inlet.pressure.unfix()
-
-            m.fs.precipitator.hydraulic_retention_time[0].unfix()
-            m.fs.precipitator.precipitate_outlet.temperature.unfix()
+        # elif unit == m.fs.precipitator:
+        #     _log.info(f"Manually initializing {unit}")
+        #     m.fs.precipitator.aqueous_inlet.flow_vol.fix()
+        #     m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
+        #     m.fs.precipitator.aqueous_inlet.temperature.fix()
+        #     m.fs.precipitator.aqueous_inlet.pressure.fix()
+        #
+        #     # m.fs.precipitator.hydraulic_retention_time[0].fix()
+        #     m.fs.precipitator.precipitate_outlet.temperature.fix()
+        #
+        #     # seed_unset_vars(m.fs.precipitator)
+        #     # seed_leach_liquid_states(m.fs.precipitator)
+        #
+        #     solver = get_solver()
+        #     solver.solve(m.fs.precipitator, tee=True)
+        #
+        #     m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
+        #     m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
+        #     m.fs.precipitator.aqueous_inlet.temperature.unfix()
+        #     m.fs.precipitator.aqueous_inlet.pressure.unfix()
+        #
+        #     # m.fs.precipitator.hydraulic_retention_time[0].unfix()
+        #     m.fs.precipitator.precipitate_outlet.temperature.unfix()
         elif unit in product_units:
             _log.info(f"Initializing {unit}")
             initializer_product.initialize(unit)
@@ -1404,9 +1392,6 @@ def initialize_system(m):
         elif unit in sx_units:
             _log.info(f"Initializing {unit}")
             initializer_sx.initialize(unit)
-        elif unit in precip_units:
-            _log.info(f"Initializing {unit}")
-            initializer_precip.initialize(unit)
         else:
             _log.info(f"Initializing {unit}")
             initializer_bt.initialize(unit)

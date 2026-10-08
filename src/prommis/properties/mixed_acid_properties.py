@@ -321,6 +321,54 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             initialize=mw_init,
         )
 
+        # Split fractions for the precipitator
+        # parameter based on pH 1.28
+        # TODO add surrogate model/equation
+        split_fractions = {
+            "H2O": 1e-20,
+            "Sc_3+": 31.61,
+            "Y_3+": 74.46,
+            "La_3+": 51.51,
+            "Ce_3+": 68.07,
+            "Pr_3+": 78,
+            "Nd_3+": 81.55,
+            "Sm_3+": 87.35,
+            "Gd_3+": 88.01,
+            "Dy_3+": 87.16,
+            "Al_3+": 0.9,
+            "Ca_2+": 20.50,
+            "Fe_3+": 2.44,
+            "H_+": 1e-20,
+            "Cl_-": 1e-20,
+        }
+
+        if self.config.include_oxalates:
+            split_fractions.update({
+                "H2C2O4": 1e-20,
+                "HC2O4_-": 1e-20,
+                "C2O4_2-": 1e-20,
+            })
+
+        elif self.config.include_sulfates:
+            split_fractions.update({
+                "HSO4_-": 1e-20,
+                "SO4_2-": 1e-20,
+            })
+
+        elif self.config.include_ascorbates:
+            split_fractions.update({
+                "HAsc-": 1e-20,
+                "Asc_-": 1e-20,
+                "HDha": 1e-20,
+                "Dha_-": 1e-20,
+            })
+
+        self.split = Param(
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize=split_fractions
+        )
+
         if (
             self.config.include_sulfates
             or self.config.include_oxalates

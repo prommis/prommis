@@ -138,7 +138,20 @@ CONFIG_REJECTION_CASES = [
     (
         "liquid_density_missing",
         dict(liquid_component_list=["Brine"]),
-        "liquid_density is required",
+        r"missing: \['Brine'\]",
+    ),
+    (
+        "liquid_density_none",
+        dict(liquid_density=None),
+        "liquid_density is required as a dict",
+    ),
+    (
+        "liquid_density_missing_water",
+        dict(
+            liquid_component_list=["H2O", "Brine"],
+            liquid_density={"Brine": 1100.0},
+        ),
+        r"missing: \['H2O'\]",
     ),
     (
         "reserved_name_liquid",

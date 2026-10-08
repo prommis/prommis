@@ -6,47 +6,112 @@
 #####################################################################################################
 """Per-component slurry particle-size-distribution property package.
 
-State:
+This package represents a slurry through component mass flows, with sized
+solids resolved over a common particle-size mesh. Unit models balance these
+flows; the package derives PSD, volume, and density properties from the state
+and configured component densities.
 
-* ``flow_mass_sized_comp_size[s, k]``: retained mass flow of the sized solid component
-  ``s`` in size interval ``k`` (ascending mesh, bin 0 finest),
-* ``flow_mass_unsized_comp[s']``: unsized solid components (optional set, default
-  empty; conserved, no PSD),
-* ``flow_mass_liquid_comp[j]``: liquid components (default ``["H2O"]``),
-* ``flow_mass_vapor_comp[v]``: vapor components (optional config, default off),
-* ``temperature`` / ``pressure``.
+In the tables, ``s`` is a sized solid, ``u`` an unsized solid, ``j`` a component
+of the indicated phase, ``v`` a vapor component, ``p`` a phase, and ``q`` a
+passing fraction. Size interval ``k`` follows the ascending mesh, with bin 0
+finest. Unsized solids have no PSD and default to an empty list. Liquids
+default to ``["H2O"]``; vapor is optional and defaults to off.
 
-The state has no composition-normalization constraint. Unit models supply
-the full component-by-size flow balances. ``flow_mass_phase`` sums mass flow for
-each declared phase: ``"Sol"`` includes sized and unsized solids, ``"Liq"``
-includes all liquid components, and optional ``"Vap"`` includes all vapor
-components. ``flow_mass_phase["Sol"] >= flow_mass_sized``, with equality when
-the unsized components carry no mass. ``flow_mass_solid_comp`` and
-``mass_frac_solid_comp`` describe component flows and composition on an
-all-solids basis.
+State variables
+---------------
 
-Derived outputs include the sized-solids PSD (``cum_passing_size`` and
-``percentile_size``) and the slurry properties ``flow_vol_slurry``,
-``vol_frac_solid_slurry`` and the densities below. ``percentile_size_comp``,
-the other per-component PSD outputs, retained mass fractions, and
-``dens_mass_solid_mass_weighted`` are on-demand properties.
-``mass_frac_comp_size`` gives component composition within an interval;
-``mass_frac_size_comp`` gives the size distribution of one component.
+=================================== ====== ==================================================
+Name                                Units  Meaning and basis
+=================================== ====== ==================================================
+``flow_mass_sized_comp_size[s, k]`` kg/s   State: retained mass flow of sized solid ``s`` in
+                                           interval ``k``.
+``flow_mass_unsized_comp[u]``       kg/s   State: mass flow of unsized solid ``u``, when
+                                           configured.
+``flow_mass_liquid_comp[j]``        kg/s   State: mass flow of liquid component ``j``.
+``flow_mass_vapor_comp[v]``         kg/s   State: mass flow of vapor component ``v``, when
+                                           configured.
+``temperature``                     K      State temperature.
+``pressure``                        Pa     State pressure.
+=================================== ====== ==================================================
 
-Fixed additive floors keep derived mass and volume ratios evaluable at zero
-flow. Near the floors, reported ratios can be biased. PSD percentiles of an
-empty stream have no physical meaning. ``validate_feed`` accepts water-only
-streams and rejects invalid state values or zero total flow across all phases.
-For reporting, ``percentile_size_report`` sets ``size_m`` only when sized
-particles are present and the smooth percentile agrees with linear bin
-interpolation within the supplied relative tolerance.
+Parameters and derived properties
+---------------------------------
 
-Densities: ``dens_mass_solid`` divides total solids mass flow by
-total solids volume flow; classifier cut-size correlations use this value.
-``dens_mass_solid_mass_weighted`` divides the sum of each component's mass flow
-times density by total solids mass flow. ``vol_frac_solid_slurry`` and
-``dens_mass_slurry`` use the same solids volume flow. ``dens_mass_slurry``
-excludes vapor.
+=================================== ====== ==================================================
+Name                                Units  Meaning and basis
+=================================== ====== ==================================================
+``size_edges[k]``                   m      Parameter: interval boundaries; ``N+1`` edges for
+                                           ``N`` intervals.
+``size_char[k]``                    m      Parameter: geometric-mean interval size; uses
+                                           ``bottom_size`` for a zero finest edge.
+``dens_mass_solid_comp[j]``         kg/m^3 Parameter: configured density of sized or unsized
+                                           solid ``j``.
+``dens_mass_liquid_comp[j]``        kg/m^3 Parameter: configured density of liquid component
+                                           ``j``.
+``flow_mass_phase[p]``              kg/s   Total phase flow; ``Sol`` includes sized and
+                                           unsized solids, ``Liq`` all liquids, and optional
+                                           ``Vap`` all vapors.
+``flow_mass_sized_comp[s]``         kg/s   Flow of sized solid ``s``, summed over its
+                                           intervals.
+``flow_mass_solid_comp[j]``         kg/s   Flow of solid ``j``, whether sized or unsized.
+``flow_mass_size[k]``               kg/s   Retained flow in interval ``k``, summed over sized
+                                           solids.
+``flow_mass_sized``                 kg/s   Total sized-solids flow; excludes unsized solids.
+``mass_frac_solid_comp[j]``         –      Composition of solid ``j`` on a total-solids mass
+                                           basis.
+``mass_frac_size[k]``               –      Retained fraction in interval ``k`` on a
+                                           sized-solids mass basis.
+``mass_frac_size_comp[s, k]``       –      Fraction of sized solid ``s`` retained in interval
+                                           ``k``; its PSD.
+``mass_frac_comp_size[s, k]``       –      Component composition within interval ``k`` on a
+                                           sized-solids basis.
+``cum_passing_size[k]``             –      Sized-solids mass fraction passing the upper edge
+                                           of interval ``k``.
+``cum_passing_comp_size[s, k]``     –      Mass fraction of sized solid ``s`` passing that
+                                           upper edge.
+``percentile_size[q]``              m      Smooth size at passing fraction ``q`` for all
+                                           sized solids.
+``percentile_size_comp[s, q]``      m      Smooth size at passing fraction ``q`` for sized
+                                           solid ``s``.
+``flow_vol_solid``                  m^3/s  Sum of each sized and unsized solid's mass flow
+                                           divided by its density.
+``flow_vol_liquid``                 m^3/s  Sum of each liquid component's mass flow divided
+                                           by its density.
+``flow_vol_slurry``                 m^3/s  Solid plus liquid volume flow; excludes vapor.
+``vol_frac_solid_slurry``           –      All-solids volume fraction of the solid-liquid
+                                           slurry.
+``dens_mass_solid``                 kg/m^3 Total solids mass flow divided by total solids
+                                           volume flow.
+``dens_mass_solid_mass_weighted``   kg/m^3 Sum of each solid's mass flow times density
+                                           divided by total solids mass flow; differs from
+                                           ``dens_mass_solid``.
+``dens_mass_slurry``                kg/m^3 Solid plus liquid mass flow divided by slurry
+                                           volume flow; excludes vapor.
+=================================== ====== ==================================================
+
+Mass fractions are calculated from component flows, without a separate
+constraint forcing them to sum to one. Unit models supply the full
+component-by-size flow balances. Retained mass fractions, per-component PSD
+properties, and ``dens_mass_solid_mass_weighted`` are built when first accessed.
+
+Small fixed terms in mass and volume flow denominators keep ratios finite at
+zero flow, but can bias them near zero. Percentiles have no physical meaning
+when the selected PSD contains no sized solids. ``validate_feed`` accepts
+water-only feeds but requires finite, nonnegative flows, positive finite
+temperature and pressure, and positive finite total flow across all phases.
+For reporting, ``percentile_size_report`` sets ``size_m`` only when the selected
+PSD contains sized solids and the smooth percentile agrees with linear bin
+interpolation within ``rel_tol``.
+
+Solid and liquid volumes are added using constant component densities; vapor
+and volume changes on mixing are excluded from slurry volume. Solid densities
+must describe the solid material, excluding interparticle voids and pores
+occupied by liquid counted in ``flow_mass_liquid_comp``. A density that includes
+those pore volumes would count that liquid volume twice. Porosity is compatible
+with this model when solid and liquid volumes do not overlap. The package does
+not model pore uptake, swelling, dissolution, or changes in liquid density
+with dissolved composition. Those effects need a property model that
+represents them and, when mass moves between phases, a phase-transfer model.
 """
 
 __author__ = "Daison Yancy Caballero"
@@ -271,8 +336,8 @@ class SolidPSDParameterData(PhysicalParameterBlock):
           component (sized and unsized), kg/m^3.
         - ``liquid_component_list``: default ``["H2O"]``.
         - ``liquid_density``: per-liquid dict of densities, kg/m^3; defaults to
-          ``{"H2O": 997.048}`` when the liquid list is ``["H2O"]``,
-          otherwise required.
+          ``{"H2O": 997.048}``. Keys must match the liquid list exactly;
+          other liquid lists require a complete dict.
         - ``vapor_component_list``: default empty; when empty no vapor state exists.
         - ``percentile_targets``: passing fractions for the indexed percentile
           properties; defaults to ``(0.8,)``. The 80% passing size is always
@@ -337,10 +402,10 @@ class SolidPSDParameterData(PhysicalParameterBlock):
     CONFIG.declare(
         "liquid_density",
         ConfigValue(
-            default=None,
+            default={"H2O": _WATER_DENSITY_25C},
             description="Dict of positive liquid densities (kg/m^3); defaults "
-            f"to {{'H2O': {_WATER_DENSITY_25C}}} when the liquid list is "
-            "['H2O'], otherwise required.",
+            f"to {{'H2O': {_WATER_DENSITY_25C}}}. Keys must match the liquid "
+            "component list exactly.",
         ),
     )
     CONFIG.declare(
@@ -417,17 +482,9 @@ class SolidPSDParameterData(PhysicalParameterBlock):
         dens_solid = _validated_density_dict(
             self.config.solid_density, sized + unsized, "solid_density"
         )
-        if self.config.liquid_density is None:
-            if liquids != ("H2O",):
-                raise ConfigurationError(
-                    "liquid_density is required when liquid_component_list "
-                    "differs from the default ['H2O']."
-                )
-            dens_liquid = {"H2O": _WATER_DENSITY_25C}
-        else:
-            dens_liquid = _validated_density_dict(
-                self.config.liquid_density, liquids, "liquid_density"
-            )
+        dens_liquid = _validated_density_dict(
+            self.config.liquid_density, liquids, "liquid_density"
+        )
 
         # Phases and components
         # Restrict the IDAES phase-component set to declared pairs.

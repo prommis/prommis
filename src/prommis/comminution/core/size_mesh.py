@@ -43,8 +43,8 @@ def validate_mesh(edges, bottom_size=None):
     ``bottom_size`` is a positive replacement for a zero finest edge
     (``x_0 == 0``) used only for characteristic-size purposes (mass accounting
     still uses the stated interval).  It is allowed only when ``x_0 == 0`` and
-    must satisfy ``0 < bottom_size < x_1``; supplying it alongside ``x_0 > 0``
-    raises.
+    must satisfy ``0 < bottom_size < x_1``; otherwise, ``ValueError`` is raised.
+    Supplying it alongside ``x_0 > 0`` also raises ``ValueError``.
 
     Args:
         edges: iterable of size edges.
@@ -151,6 +151,20 @@ def meshes_equal(edges_a, edges_b, rtol=1e-9, atol=1e-12):
     This comparison does not validate minimum mesh length, edge ordering, or
     positivity. The absolute tolerance uses the same units as the edges. The
     test is symmetric: ``abs(a-b) <= atol + rtol*max(abs(a), abs(b))``.
+
+    Args:
+        edges_a: iterable of edges in one consistent length unit.
+        edges_b: iterable of edges in the same length unit as ``edges_a``.
+        rtol: dimensionless relative tolerance (default: 1e-9).
+        atol: absolute tolerance in the edges' length unit (default: 1e-12).
+
+    Returns:
+        True if the lists have equal length and every edge pair satisfies the
+        tolerance; False otherwise.
+
+    Raises:
+        ValueError: if an edge is a boolean, non-finite, or cannot be converted
+            to a finite float.
     """
     a = [_finite_float(e, "mesh edge") for e in edges_a]
     b = [_finite_float(e, "mesh edge") for e in edges_b]

@@ -34,7 +34,7 @@ or
         - [ ] Checked correctness/logic of code and tests
         - [ ] Checked for alignment with the contribution guide
         - [ ] Considered security implications
-    - [ ] **As-is**: LLM-generated content was commited directly to the repository
+    - [ ] **As-is**: LLM-generated content was committed directly to the repository
 
  **Notes for reviewers (optional):** <!-- Where should reviewers focus? What are you least confident about? -->
 

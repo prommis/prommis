@@ -17,6 +17,8 @@ from idaes.core.util.testing import assert_solution_equivalent
 
 import pytest
 
+from prommis.properties.mixed_acid_properties import get_aliases
+
 from prommis.solvent_extraction.solvent_extraction import (
     SolventExtractionInitializer,
 )
@@ -34,22 +36,40 @@ metal_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe", "
     [False, True],
     scope="class",
 )
+@pytest.mark.parametrize(
+    "use_mixed_acid",
+    [False, True],
+    scope="class",
+)
 class Test_Solvent_Extraction_steady_model:
 
     @pytest.fixture(scope="class")
     @classmethod
-    def SolEx_frame(cls, has_holdup):
+    def SolEx_frame(cls, has_holdup, use_mixed_acid):
         dosage = 5
         number_of_stages = 3
         m = model_buildup_and_set_inputs(
-            dosage, number_of_stages, has_holdup=has_holdup
+            dosage,
+            number_of_stages,
+            has_holdup=has_holdup,
+            use_mixed_acid=use_mixed_acid,
         )
+        if use_mixed_acid:
+            # The sulfuric acid leaching properties use molecular weights
+            # with fewer significant figures than the mixed acid properties,
+            # which then leads to a discrepancy in the model solution.
+            # Use versions with fewer significant figures here to make sure
+            # that the models are structurally equivalent.
+            m.fs.leach_soln.mw["H2O"] = 18e-3
+            m.fs.leach_soln.mw["H_+"] = 1e-3
+            m.fs.leach_soln.mw["HSO4_-"] = 97e-3
+            m.fs.leach_soln.mw["SO4_2-"] = 96e-3
 
         return m
 
     @pytest.fixture(scope="class")
     @classmethod
-    def expected_results(cls, has_holdup):
+    def expected_results(cls, has_holdup, use_mixed_acid):
         out = {
             "aqueous_inlet.flow_vol": {(0,): (62.01, 1e-4, None)},
             "aqueous_inlet.temperature": {(0,): (305.15, 1e-4, None)},
@@ -139,6 +159,15 @@ class Test_Solvent_Extraction_steady_model:
             out["aqueous_outlet.pressure"][(0,)] = (1.04895e05, 1e-4, None)
             out["organic_outlet.pressure"][(0,)] = (1.02933e05, 1e-4, None)
 
+        if use_mixed_acid:
+            for port in ["aqueous_inlet", "aqueous_outlet"]:
+                old_dict = out[port + ".conc_mass_comp"]
+                new_dict = {}
+                for j1, j2 in get_aliases(include_sulfates=True).items():
+                    new_dict[(0.0, j2)] = old_dict[(0.0, j1)]
+
+                out[port + ".conc_mass_comp"] = new_dict
+
         return out
 
     @pytest.mark.component
@@ -168,26 +197,42 @@ class Test_Solvent_Extraction_steady_model:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_numerical_issues(self, SolEx_frame, has_holdup):
+    def test_numerical_issues(self, SolEx_frame, has_holdup, use_mixed_acid):
         model = SolEx_frame
         dt = DiagnosticsToolbox(model)
         dt.assert_no_numerical_warnings()
 
         # Why does adding holdup *reduce* the unscaled condition number?
         if has_holdup:
-            assert jacobian_cond(model, scaled=False) == pytest.approx(
-                8.415018e12, rel=1e-3
-            )
-            assert jacobian_cond(model, scaled=True) == pytest.approx(
-                1.2842e7, rel=1e-3
-            )
+            if use_mixed_acid:
+                assert jacobian_cond(model, scaled=False) == pytest.approx(
+                    8.4210e12, rel=1e-3
+                )
+                assert jacobian_cond(model, scaled=True) == pytest.approx(
+                    1.3238e7, rel=1e-3
+                )
+            else:
+                assert jacobian_cond(model, scaled=False) == pytest.approx(
+                    8.415018e12, rel=1e-3
+                )
+                assert jacobian_cond(model, scaled=True) == pytest.approx(
+                    1.2842e7, rel=1e-3
+                )
         else:
-            assert jacobian_cond(model, scaled=False) == pytest.approx(
-                2.46261e14, rel=1e-3
-            )
-            assert jacobian_cond(model, scaled=True) == pytest.approx(
-                1.1119e7, rel=1e-3
-            )
+            if use_mixed_acid:
+                assert jacobian_cond(model, scaled=False) == pytest.approx(
+                    2.4643e14, rel=1e-3
+                )
+                assert jacobian_cond(model, scaled=True) == pytest.approx(
+                    1.1392e7, rel=1e-3
+                )
+            else:
+                assert jacobian_cond(model, scaled=False) == pytest.approx(
+                    2.46261e14, rel=1e-3
+                )
+                assert jacobian_cond(model, scaled=True) == pytest.approx(
+                    1.1119e7, rel=1e-3
+                )
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -198,7 +243,9 @@ class Test_Solvent_Extraction_steady_model:
 
     @pytest.mark.component
     @pytest.mark.solver
-    def test_get_stream_table_contents(self, SolEx_frame, expected_results):
+    def test_get_stream_table_contents(
+        self, SolEx_frame, expected_results, use_mixed_acid
+    ):
         nan = float("NaN")
         aq_components = [
             "H2O",
@@ -219,6 +266,10 @@ class Test_Solvent_Extraction_steady_model:
             "Ca",
             "Fe",
         ]
+        if use_mixed_acid:
+            aliases = get_aliases(include_sulfates=True)
+            for k, j in enumerate(aq_components):
+                aq_components[k] = aliases[j]
         org_components = [
             "Kerosene",
             "DEHPA",

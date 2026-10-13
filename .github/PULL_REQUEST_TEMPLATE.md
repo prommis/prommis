@@ -13,6 +13,7 @@
 - [ ] Documentation
 - [ ] Tests
 - [ ] Diagnostic tests for models
+- [ ] report() method (new or updated unit models)
 
 ## Large Language Model - Use Disclosure
 <!-- Contributors must disclose whether and how LLM tools were used and highlight any areas of uncertainty or where they want focused reviewer feedback -->

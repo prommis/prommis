@@ -198,31 +198,15 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 
 from prommis.leaching.mixed_acid_leach_reactions import MixedAcidLeachingReactionParameterBlock
-from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
-# from prommis.precipitate.precipitator_isotherm import (
-# from prommis.precipitate.precipitator_isotherm import (
-#     OxalatePrecipitator,
-#     OxalatePrecipitatorInitializer,
-# )
 from prommis.precipitate.precipitator import Precipitator
-from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
-from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.properties.translator_sx_to_leach import TranslatorSXLeach
 from prommis.properties.translator_sx_to_precip import TranslatorSXPrecip
 from prommis.properties.translator_precip_to_sx import TranslatorPrecipSX
-from prommis.roasting.mixed_acid_ree_oxalate_roaster import MixedAcidREEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.solvent_extraction import (
-    SolventExtraction,
-    SolventExtractionInitializer,
-)
-from prommis.solvent_extraction.solvent_extraction_reaction_package import (
-    SolventExtractionReactions,
-)
 from prommis.solvent_extraction.mixed_acid_solvent_extraction import (
     MixedAcidSolventExtraction,
     MixedAcidSolventExtractionInitializer,
@@ -237,11 +221,6 @@ from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
 )
 
-from idaes.core.util.model_statistics import large_residuals_set
-from idaes.core.scaling import get_scaling_factor
-from pyomo.util.calc_var_value import calculate_variable_from_constraint
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
-
 _log = idaeslog.getLogger(__name__)
 
 # Epsilon represents near-zero component concentrations
@@ -255,10 +234,6 @@ def main():
     m = build()
 
     set_operating_conditions(m)
-
-    print("Structural Issues")
-    dt = DiagnosticsToolbox(m)
-    dt.report_structural_issues()
 
     set_scaling(m)
 
@@ -1150,8 +1125,7 @@ def initialize_system(m):
             (0, "Cl_-"): 1903.18,
             (0, "Dy_3+"): 0.08,
             (0, "Fe_3+"): 1420.61,
-            # 364i, 94i, 104i, 25i, 300m | 258i, 300m
-            (0, "Gd_3+"): 0.08,  #0.08843
+            (0, "Gd_3+"): 0.08,
             (0, "H_+"): 54.25,
             (0, "H2O"): 1000000,
             (0, "HSO4_-"): 19465.77,
@@ -1160,8 +1134,8 @@ def initialize_system(m):
             (0, "Pr_3+"): 2.469,
             (0, "SO4_2-"): 3871.5,
             (0, "Sc_3+"): 1.75e-3,
-            (0, "Sm_3+"): 2.31,  #0.7954
-            (0, "Y_3+"): 1.46e-2,  #0.007
+            (0, "Sm_3+"): 2.31,
+            (0, "Y_3+"): 1.46e-2,
         },
     }
     tear_guesses2 = {
@@ -1171,10 +1145,10 @@ def initialize_system(m):
         "conc_mass_comp": {
             (0, "Al_o"): 79.196,
             (0, "Ca_o"): 6.8,
-            (0, "Ce_o"): 2.27,   #0.1425
-            (0, "Dy_o"): 0.21,  # 0.09265
+            (0, "Ce_o"): 2.27,
+            (0, "Dy_o"): 0.21,
             (0, "Fe_o"): 261.26,
-            (0, "Gd_o"): 0.33,  #0.08465
+            (0, "Gd_o"): 0.33,
             (0, "La_o"): 0.11,
             (0, "Nd_o"): 0.64,
             (0, "Pr_o"): 0.071,
@@ -1195,15 +1169,15 @@ def initialize_system(m):
             (0, "Ce_3+"): 17.72,
             (0, "Cl_-"): 3197.12,
             (0, "Dy_3+"): 0.50,
-            (0, "Fe_3+"): 3278.86,  #2117.3073
-            (0, "Gd_3+"): 1.47,  #0.6019
-            (0, "H_+"): 4.26,  #13.8834
+            (0, "Fe_3+"): 3278.86,
+            (0, "Gd_3+"): 1.47,
+            (0, "H_+"): 4.26,
             (0, "H2O"): 1000000,
-            (0, "HSO4_-"): 6900.7,  #13609.7465
+            (0, "HSO4_-"): 6900.7,
             (0, "La_3+"): 7.38,
             (0, "Nd_3+"): 7.99,
             (0, "Pr_3+"): 2.23,
-            (0, "SO4_2-"): 16419.12,   #10006.579
+            (0, "SO4_2-"): 16419.12,
             (0, "Sc_3+"): 0.17,
             (0, "Sm_3+"): 1.12,
             (0, "Y_3+"): 0.80,
@@ -1216,16 +1190,16 @@ def initialize_system(m):
         "conc_mass_comp": {
             (0, "Al_o"): 36.41,
             (0, "Ca_o"): 5.38,
-            (0, "Ce_o"): 1.14,  #0.03387
-            (0, "Dy_o"): 0.013,  #2.668e-6
+            (0, "Ce_o"): 1.14,
+            (0, "Dy_o"): 0.013,
             (0, "Fe_o"): 91.1,
-            (0, "Gd_o"): 0.079, #2.1856e-6
-            (0, "La_o"): 0.14,  #0.0703
-            (0, "Nd_o"): 0.44,   #1.0416e-5
+            (0, "Gd_o"): 0.079,
+            (0, "La_o"): 0.14,
+            (0, "Nd_o"): 0.44,
             (0, "Pr_o"): 0.059,
             (0, "Sc_o"): 2.19e-4,
             (0, "Sm_o"): 9.35e-3,
-            (0, "Y_o"): 0.21,  #1.832e-5
+            (0, "Y_o"): 0.21,
             (0, "DEHPA"): 192174.95,
             (0, "Kerosene"): 8.2e5,
         },
@@ -1240,12 +1214,12 @@ def initialize_system(m):
             (0, "Ce_3+"): 525.13,
             (0, "Cl_-"): 35453.0,
             (0, "Dy_3+"): 15.14,
-            (0, "Fe_3+"): 1932.16,  #1322.03
+            (0, "Fe_3+"): 1932.16,
             (0, "Gd_3+"): 42.49,
             (0, "H_+"): 692.2,
             (0, "H2O"): 1000000,
             (0, "La_3+"): 29.36,
-            (0, "Nd_3+"): 175.35,  #58.19
+            (0, "Nd_3+"): 175.35,
             (0, "Pr_3+"): 3.77,
             (0, "Sc_3+"): 2.13e-3,
             (0, "Sm_3+"): 1.87,
@@ -1455,7 +1429,6 @@ def initialize_system(m):
             initialize_precipitator(unit)
 
             solver = get_solver()
-            # solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 300
             solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.precipitator, tee=True)
@@ -3152,8 +3125,3 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
-
-    #TODO: Recently fixed all the DOF issues, now need to get this system solving after it's been updated to be
-    # the same as the newest flowsheet, except the new precipitator is replaced by the old precipitator and the old
-    # precipitator solids properties
-    # Should start by trying to fix the leaching/precipitation initializers

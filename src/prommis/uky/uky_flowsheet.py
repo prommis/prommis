@@ -1150,7 +1150,8 @@ def initialize_system(m):
             (0, "Cl_-"): 1903.18,
             (0, "Dy_3+"): 0.08,
             (0, "Fe_3+"): 1420.61,
-            (0, "Gd_3+"): 0.256,
+            # 364i, 94i, 104i, 25i, 300m | 258i, 300m
+            (0, "Gd_3+"): 0.08,  #0.08843
             (0, "H_+"): 54.25,
             (0, "H2O"): 1000000,
             (0, "HSO4_-"): 19465.77,
@@ -1159,8 +1160,8 @@ def initialize_system(m):
             (0, "Pr_3+"): 2.469,
             (0, "SO4_2-"): 3871.5,
             (0, "Sc_3+"): 1.75e-3,
-            (0, "Sm_3+"): 2.31,
-            (0, "Y_3+"): 1.46e-2,
+            (0, "Sm_3+"): 2.31,  #0.7954
+            (0, "Y_3+"): 1.46e-2,  #0.007
         },
     }
     tear_guesses2 = {
@@ -1170,10 +1171,10 @@ def initialize_system(m):
         "conc_mass_comp": {
             (0, "Al_o"): 79.196,
             (0, "Ca_o"): 6.8,
-            (0, "Ce_o"): 2.27,
-            (0, "Dy_o"): 0.21,
+            (0, "Ce_o"): 2.27,   #0.1425
+            (0, "Dy_o"): 0.21,  # 0.09265
             (0, "Fe_o"): 261.26,
-            (0, "Gd_o"): 0.33,
+            (0, "Gd_o"): 0.33,  #0.08465
             (0, "La_o"): 0.11,
             (0, "Nd_o"): 0.64,
             (0, "Pr_o"): 0.071,
@@ -1194,15 +1195,15 @@ def initialize_system(m):
             (0, "Ce_3+"): 17.72,
             (0, "Cl_-"): 3197.12,
             (0, "Dy_3+"): 0.50,
-            (0, "Fe_3+"): 3278.86,
-            (0, "Gd_3+"): 1.47,
-            (0, "H_+"): 4.26,
+            (0, "Fe_3+"): 3278.86,  #2117.3073
+            (0, "Gd_3+"): 1.47,  #0.6019
+            (0, "H_+"): 4.26,  #13.8834
             (0, "H2O"): 1000000,
-            (0, "HSO4_-"): 6900.7,
+            (0, "HSO4_-"): 6900.7,  #13609.7465
             (0, "La_3+"): 7.38,
             (0, "Nd_3+"): 7.99,
             (0, "Pr_3+"): 2.23,
-            (0, "SO4_2-"): 16419.12,
+            (0, "SO4_2-"): 16419.12,   #10006.579
             (0, "Sc_3+"): 0.17,
             (0, "Sm_3+"): 1.12,
             (0, "Y_3+"): 0.80,
@@ -1215,16 +1216,16 @@ def initialize_system(m):
         "conc_mass_comp": {
             (0, "Al_o"): 36.41,
             (0, "Ca_o"): 5.38,
-            (0, "Ce_o"): 1.14,
-            (0, "Dy_o"): 0.013,
+            (0, "Ce_o"): 1.14,  #0.03387
+            (0, "Dy_o"): 0.013,  #2.668e-6
             (0, "Fe_o"): 91.1,
-            (0, "Gd_o"): 0.079,
-            (0, "La_o"): 0.14,
-            (0, "Nd_o"): 0.44,
+            (0, "Gd_o"): 0.079, #2.1856e-6
+            (0, "La_o"): 0.14,  #0.0703
+            (0, "Nd_o"): 0.44,   #1.0416e-5
             (0, "Pr_o"): 0.059,
             (0, "Sc_o"): 2.19e-4,
             (0, "Sm_o"): 9.35e-3,
-            (0, "Y_o"): 0.21,
+            (0, "Y_o"): 0.21,  #1.832e-5
             (0, "DEHPA"): 192174.95,
             (0, "Kerosene"): 8.2e5,
         },
@@ -1239,12 +1240,12 @@ def initialize_system(m):
             (0, "Ce_3+"): 525.13,
             (0, "Cl_-"): 35453.0,
             (0, "Dy_3+"): 15.14,
-            (0, "Fe_3+"): 1932.16,
+            (0, "Fe_3+"): 1932.16,  #1322.03
             (0, "Gd_3+"): 42.49,
             (0, "H_+"): 692.2,
             (0, "H2O"): 1000000,
             (0, "La_3+"): 29.36,
-            (0, "Nd_3+"): 175.35,
+            (0, "Nd_3+"): 175.35,  #58.19
             (0, "Pr_3+"): 3.77,
             (0, "Sc_3+"): 2.13e-3,
             (0, "Sm_3+"): 1.87,
@@ -1348,6 +1349,64 @@ def initialize_system(m):
                 state.inherent_equilibrium_eqn["H2SO4_Ka2"],
             )
 
+    def seed_leach_stages_from_inlet(blk):
+        mc = blk.mscontactor
+        for phase in ("liquid", "solid"):
+            inlet = getattr(mc, f"{phase}_inlet_state")
+            stages = getattr(mc, phase)
+            for (t, s) in stages:
+                src = inlet[t]
+                dst = stages[t, s]
+                dst_vars = dst.define_state_vars()
+                for name, svar in src.define_state_vars().items():
+                    dvar = dst_vars[name]
+                    for idx in svar:  # idx is None for scalar vars
+                        dvar[idx].set_value(value(svar[idx]))
+
+        # derived liquid properties, consistent with the copied mass concentrations
+        for (t, s) in mc.liquid:
+            state = mc.liquid[t, s]
+            for j in state.conc_mol_comp:
+                calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
+            for j in state.flow_mol_comp:
+                calculate_variable_from_constraint(state.flow_mol_comp[j], state.flow_mol_comp_eqn[j])
+
+    from pyomo.environ import value
+    from pyomo.util.calc_var_value import calculate_variable_from_constraint
+    from idaes.core.util.model_statistics import large_residuals_set
+
+    def initialize_precipitator(unit):
+        prop_aq = unit.config.property_package_aqueous
+        prop_s = unit.config.property_package_precipitate
+        for t in unit.flowsheet().time:
+            pin = unit.cv_aqueous.properties_in[t]
+            pout = unit.cv_aqueous.properties_out[t]
+
+            # inlet derived properties (conc_mol_comp, flow_mol_comp)
+            for j in prop_aq.component_list:
+                calculate_variable_from_constraint(pin.conc_mol_comp[j], pin.conc_mol_comp_eqn[j])
+                calculate_variable_from_constraint(pin.flow_mol_comp[j], pin.flow_mol_comp_eqn[j])
+
+            # outlet: same volume, depleted by the fixed splits (stay above the 1e-20 bound)
+            pout.flow_vol.set_value(value(pin.flow_vol))
+            for j in prop_aq.component_list:
+                frac = 1.0 if j == "H2O" else 1 - value(prop_aq.split[j]) / 100
+                pout.conc_mass_comp[j].set_value(max(value(pin.conc_mass_comp[j]) * frac, 1e-20))
+                calculate_variable_from_constraint(pout.conc_mol_comp[j], pout.conc_mol_comp_eqn[j])
+                calculate_variable_from_constraint(pout.flow_mol_comp[j], pout.flow_mol_comp_eqn[j])
+
+            # precipitate from the generation equation
+            for j in prop_s.component_list:
+                calculate_variable_from_constraint(
+                    unit.precipitate_state_block[t].flow_mol_comp[j],
+                    unit.precipitate_generation[t, j],
+                )
+
+        bad = large_residuals_set(unit, tol=1e-6)
+        print(f"{unit.name}: {len(bad)} constraints with residual > 1e-6")
+        for c in list(bad)[:15]:
+            print("   ", c.name)
+
     def function(unit):
         if unit in feed_units:
             _log.info(f"Initializing {unit}")
@@ -1367,12 +1426,12 @@ def initialize_system(m):
                 m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
             for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
                 m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
-            seed_leach_liquid_states(m.fs.leach)
+            seed_leach_stages_from_inlet(m.fs.leach)
 
             solver = get_solver()
             solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 500
-            # solver.options["nlp_scaling_method"] = "user-scaling"
+            solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.leach, tee=True)
             print(solver.options)
 
@@ -1393,10 +1452,12 @@ def initialize_system(m):
             m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["HC2O4_-"].unfix()
             m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["C2O4_2-"].unfix()
 
+            initialize_precipitator(unit)
+
             solver = get_solver()
-            solver.options["bound_relax_factor"] = 0
+            # solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 300
-            # solver.options["nlp_scaling_method"] = "user-scaling"
+            solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.precipitator, tee=True)
 
             m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
@@ -1530,6 +1591,12 @@ def add_result_expressions(m):
         "Gd2O3": (157.25 * 2 + 16 * 3) * units.g / units.mol,
         "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
     }
+
+    print("Roaster product-flow indices:")
+    print(list(m.fs.roaster.flow_mol_comp_product.index_set()))
+
+    print("Metal set:")
+    print(list(m.fs.metal_set))
 
     @fs.Expression(
         fs.time,
@@ -2353,12 +2420,31 @@ def add_costing(m):
     # Precipitation costs
     # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
     reep_pe_tanks_accounts = ["10.1"]
+
+    m.fs.precipitator.volume = Var(initialize=15.04, units=units.gal, bounds=(0, None))
+
+    @m.fs.precipitator.Constraint(reep_pe_tanks_accounts)
+    def volume_scaling_constraint(c, k):
+        return m.fs.precipitator.volume == units.convert(
+            REE_costing_params["1"][k]["RP Value"]
+            * units.gal
+            * (
+                m.fs.precipitator.aqueous_inlet.flow_vol[0]
+                / reference_basis_flow["precipitator_solex_aqueous_flow_vol"]
+            ),
+            to_units=units.gal,
+        )
+
+    m.fs.scaling_constraints[m.fs.precipitator.volume] = (
+        m.fs.precipitator.volume_scaling_constraint
+    )
+
     m.fs.precipitator.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing,
         costing_method=QGESSCostingData.get_REE_costing,
         costing_method_arguments={
             "cost_accounts": reep_pe_tanks_accounts,
-            "scaled_param": m.fs.precipitator.volume[0],
+            "scaled_param": m.fs.precipitator.volume,
             "source": 1,
             "n_equip": 1,
             "scale_down_parallel_equip": False,
@@ -3070,3 +3156,4 @@ if __name__ == "__main__":
     #TODO: Recently fixed all the DOF issues, now need to get this system solving after it's been updated to be
     # the same as the newest flowsheet, except the new precipitator is replaced by the old precipitator and the old
     # precipitator solids properties
+    # Should start by trying to fix the leaching/precipitation initializers

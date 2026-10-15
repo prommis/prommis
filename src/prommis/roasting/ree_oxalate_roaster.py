@@ -884,9 +884,13 @@ constructed,
 
         # Currently the solid feed port contains anhydrous REE oxalate
         # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
-        reversed_react = dict(
-            map(reversed, self.config.property_package_precipitate_solid.react.items())
-        )
+        def _strip_charge_suffix(name):
+            return name.split("_")[0]
+
+        reversed_react = {
+            _strip_charge_suffix(v): k
+            for k, v in self.config.property_package_precipitate_solid.react.items()
+        }
 
         @self.Constraint(
             self.flowsheet().config.time,

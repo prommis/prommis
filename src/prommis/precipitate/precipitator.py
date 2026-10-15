@@ -277,6 +277,12 @@ see reaction package for documentation.}""",
         ),
     )
 
+    def fix_initialization_states(self):
+        self.cv_aqueous.properties_in.fix_initialization_states()
+        for t in self.flowsheet().time:
+            self.cv_aqueous.properties_in[t].conc_mass_comp["HC2O4_-"].unfix()
+            self.cv_aqueous.properties_in[t].conc_mass_comp["C2O4_2-"].unfix()
+
     def build(self):
         """
         Build method for precipitator unit model.

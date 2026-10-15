@@ -198,20 +198,31 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
 )
 
 from prommis.leaching.mixed_acid_leach_reactions import MixedAcidLeachingReactionParameterBlock
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
+# from prommis.precipitate.precipitator_isotherm import (
 # from prommis.precipitate.precipitator_isotherm import (
 #     OxalatePrecipitator,
 #     OxalatePrecipitatorInitializer,
 # )
 from prommis.precipitate.precipitator import Precipitator
 from prommis.precipitate.precipitate_reactions import OxalatePrecipitationReactions
+from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.properties.coal_refuse_properties import CoalRefuseParameters
+from prommis.properties.translator_hcl_leach import TranslatorHClLeach
 from prommis.properties.translator_sx_to_leach import TranslatorSXLeach
 from prommis.properties.translator_sx_to_precip import TranslatorSXPrecip
 from prommis.properties.translator_precip_to_sx import TranslatorPrecipSX
 from prommis.roasting.mixed_acid_ree_oxalate_roaster import MixedAcidREEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
+)
+from prommis.solvent_extraction.solvent_extraction_reaction_package import (
+    SolventExtractionReactions,
+)
 from prommis.solvent_extraction.mixed_acid_solvent_extraction import (
     MixedAcidSolventExtraction,
     MixedAcidSolventExtractionInitializer,
@@ -229,6 +240,7 @@ from prommis.properties.mixed_acid_properties import (
 from idaes.core.util.model_statistics import large_residuals_set
 from idaes.core.scaling import get_scaling_factor
 from pyomo.util.calc_var_value import calculate_variable_from_constraint
+from idaes.core.util.model_diagnostics import DiagnosticsToolbox
 
 _log = idaeslog.getLogger(__name__)
 
@@ -244,6 +256,10 @@ def main():
 
     set_operating_conditions(m)
 
+    print("Structural Issues")
+    dt = DiagnosticsToolbox(m)
+    dt.report_structural_issues()
+
     set_scaling(m)
 
     if degrees_of_freedom(m) != 0:
@@ -256,6 +272,13 @@ def main():
     initialize_system(m)
 
     solve_system(m, tee=True)
+
+    print("Initialized tear guesses after 1st solve")
+    m.fs.leach.liquid_inlet.display()
+    m.fs.solex_rougher_load.organic_inlet.display()
+    m.fs.solex_rougher_load.aqueous_inlet.display()
+    m.fs.solex_cleaner_load.organic_inlet.display()
+    m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     # fixes the volumetric flow rate of the organic recycle streams and unfixes the flow of the make-up streams
     # we want to be able to adjust the total recycle flow rate, not just the make-up portion of it
@@ -553,7 +576,6 @@ def build():
     # Precipitation property, reaction, and unit models
 
     m.fs.properties_solid = PrecipitateParameters()
-    m.fs.precip_rxns = OxalatePrecipitationReactions()
 
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.precip_soln,
@@ -597,7 +619,16 @@ def build():
         doc="gas property",
     )
 
-    m.fs.roaster = MixedAcidREEOxalateRoaster(
+    #TODO: Check whether this or the regular roaster should be used
+    # m.fs.roaster = MixedAcidREEOxalateRoaster(
+    #     property_package_gas=m.fs.prop_gas,
+    #     property_package_precipitate_solid=m.fs.properties_solid,
+    #     property_package_precipitate_liquid=m.fs.precip_soln,
+    #     has_holdup=False,
+    #     has_heat_transfer=True,
+    #     has_pressure_change=True,
+    # )
+    m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.properties_solid,
         property_package_precipitate_liquid=m.fs.precip_soln,
@@ -948,9 +979,6 @@ def set_operating_conditions(m, DEHPA_dosage=0.2):
     m.fs.precip_sx_mixer.precip_state[0].temperature.fix(Temp_room)
     m.fs.precip_sx_mixer.precip_state[0].pressure.fix(P_atm)
 
-    m.fs.precipitator.aqueous_inlet.temperature[0].fix(Temp_room)
-    m.fs.precipitator.aqueous_inlet.pressure[0].fix(P_atm)
-
     m.fs.roaster.liquid_in[0].temperature.fix(Temp_room)
     m.fs.roaster.liquid_in[0].pressure.fix(P_atm)
 
@@ -1034,8 +1062,8 @@ def set_operating_conditions(m, DEHPA_dosage=0.2):
 
     # Fix precipitator outlet temperature and HRT
     m.fs.precipitator.precipitate_state_block[0].temperature.fix(348.15 * units.K)
-    # m.fs.precipitator.precipitate_outlet.temperature.fix(348.15 * units.K)
-    # m.fs.precipitator.hydraulic_retention_time.fix(2)
+    m.fs.precipitator.cv_aqueous.properties_out[0].temperature.fix(348.15)
+    m.fs.precipitator.cv_aqueous.properties_out[0].pressure.fix(P_atm)
 
     # Roaster gas feed
     m.fs.roaster.deltaP.fix(0)
@@ -1344,6 +1372,7 @@ def initialize_system(m):
             solver = get_solver()
             solver.options["bound_relax_factor"] = 0
             solver.options["max_iter"] = 500
+            # solver.options["nlp_scaling_method"] = "user-scaling"
             solver.solve(m.fs.leach, tee=True)
             print(solver.options)
 
@@ -1354,29 +1383,26 @@ def initialize_system(m):
 
             m.fs.leach.solid_inlet.flow_mass.unfix()
             m.fs.leach.solid_inlet.mass_frac_comp.unfix()
-        # elif unit == m.fs.precipitator:
-        #     _log.info(f"Manually initializing {unit}")
-        #     m.fs.precipitator.aqueous_inlet.flow_vol.fix()
-        #     m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
-        #     m.fs.precipitator.aqueous_inlet.temperature.fix()
-        #     m.fs.precipitator.aqueous_inlet.pressure.fix()
-        #
-        #     # m.fs.precipitator.hydraulic_retention_time[0].fix()
-        #     m.fs.precipitator.precipitate_outlet.temperature.fix()
-        #
-        #     # seed_unset_vars(m.fs.precipitator)
-        #     # seed_leach_liquid_states(m.fs.precipitator)
-        #
-        #     solver = get_solver()
-        #     solver.solve(m.fs.precipitator, tee=True)
-        #
-        #     m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
-        #     m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
-        #     m.fs.precipitator.aqueous_inlet.temperature.unfix()
-        #     m.fs.precipitator.aqueous_inlet.pressure.unfix()
-        #
-        #     # m.fs.precipitator.hydraulic_retention_time[0].unfix()
-        #     m.fs.precipitator.precipitate_outlet.temperature.unfix()
+        elif unit == m.fs.precipitator:
+            _log.info(f"Manually initializing {unit}")
+            m.fs.precipitator.aqueous_inlet.flow_vol.fix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.fix()
+            m.fs.precipitator.aqueous_inlet.temperature.fix()
+            m.fs.precipitator.aqueous_inlet.pressure.fix()
+
+            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["HC2O4_-"].unfix()
+            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["C2O4_2-"].unfix()
+
+            solver = get_solver()
+            solver.options["bound_relax_factor"] = 0
+            solver.options["max_iter"] = 300
+            # solver.options["nlp_scaling_method"] = "user-scaling"
+            solver.solve(m.fs.precipitator, tee=True)
+
+            m.fs.precipitator.aqueous_inlet.flow_vol.unfix()
+            m.fs.precipitator.aqueous_inlet.conc_mass_comp.unfix()
+            m.fs.precipitator.aqueous_inlet.temperature.unfix()
+            m.fs.precipitator.aqueous_inlet.pressure.unfix()
         elif unit in product_units:
             _log.info(f"Initializing {unit}")
             initializer_product.initialize(unit)
@@ -1411,9 +1437,10 @@ def solve_system(m, solver_obj=None, tee=False):
     if solver_obj is None:
         # Why isn't it getting ipopt_v2 automatically?
         solver_obj = get_solver("ipopt_v2")
-    solver_obj.options.constr_viol_tol = 1e-8
+    solver_obj.options.constr_viol_tol = 1e-6
     solver_obj.options["nlp_scaling_method"] = "user-scaling"
     solver_obj.options["bound_relax_factor"] = 0
+    solver_obj.options["max_iter"] = 300
 
     results = solver_obj.solve(m, tee=tee)
 
@@ -3039,3 +3066,7 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
+
+    #TODO: Recently fixed all the DOF issues, now need to get this system solving after it's been updated to be
+    # the same as the newest flowsheet, except the new precipitator is replaced by the old precipitator and the old
+    # precipitator solids properties

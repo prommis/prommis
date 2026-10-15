@@ -32,7 +32,7 @@ Additional constraints
 """
 
 from pyomo.common.config import ConfigValue, In
-from pyomo.environ import Set, Param, units as pyunits
+from pyomo.environ import Set, Param, value, units as pyunits
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class
@@ -90,18 +90,18 @@ class TranslatorHClLeachScaler(CustomScalerBase):
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
-        for condata in model.conc_mass_comp_hcl_eqn.values():
+        for condata in model.conc_mass_comp_shared_eqn.values():
             self.scale_constraint_by_nominal_value(
                 condata,
                 scheme=ConstraintScalingScheme.inverseMaximum,
                 overwrite=overwrite,
             )
-        for condata in model.conc_mass_sulfates_eqn.values():
-            self.scale_constraint_by_nominal_value(
-                condata,
-                scheme=ConstraintScalingScheme.inverseMaximum,
-                overwrite=overwrite,
-            )
+
+        if hasattr(model, "conc_mass_comp_sulfate_eqn"):
+            for condata in model.conc_mass_comp_sulfate_eqn.values():
+                self.scale_constraint_by_nominal_value(
+                    condata, scheme=ConstraintScalingScheme.inverseMaximum, overwrite=overwrite,
+                )
 
 
 @declare_process_block_class("TranslatorHClLeach")
@@ -135,6 +135,14 @@ class TranslatorHClLeachData(TranslatorData):
 
     default_scaler = TranslatorHClLeachScaler
 
+    def fix_initialization_states(self):
+        self.properties_in.fix_initialization_states()
+        # Need to temporarily fix HSO4_- during initialization, otherwise there will be 1 DOF
+        for t in self.flowsheet().time:
+            self.properties_out[t].conc_mass_comp["HSO4_-"].fix(
+                value(self.eps_conc_mass)
+            )
+
     def build(self):
         """
         Begin building model.
@@ -161,33 +169,31 @@ class TranslatorHClLeachData(TranslatorData):
         def flow_vol_eqn(blk, t):
             return blk.properties_out[t].flow_vol == blk.properties_in[t].flow_vol
 
-        self.HCl_components = Set(
+        self.shared_components = Set(
             initialize=[
-                "Al",
-                "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
+                "Al_3+",
+                "Ca_2+",
+                "Fe_3+",
+                "Sc_3+",
+                "Y_3+",
+                "La_3+",
+                "Ce_3+",
+                "Pr_3+",
+                "Nd_3+",
+                "Sm_3+",
+                "Gd_3+",
+                "Dy_3+",
                 "H2O",
-                "H",
-                "Cl",
+                "H_+",
+                "Cl_-",
             ]
         )
-        self.sulfate_components = Set(initialize=["HSO4", "SO4"])
-
         @self.Constraint(
             self.flowsheet().time,
-            self.HCl_components,
-            doc="Defines mass concentration of components from HCl properties",
+            self.shared_components,
+            doc="Defines mass concentration for the shared components",
         )
-        def conc_mass_comp_hcl_eqn(blk, t, i):
+        def conc_mass_comp_shared_eqn(blk, t, i):
             return (
                 blk.properties_out[t].conc_mass_comp[i]
                 == blk.properties_in[t].conc_mass_comp[i]
@@ -195,9 +201,24 @@ class TranslatorHClLeachData(TranslatorData):
 
         @self.Constraint(
             self.flowsheet().time,
-            self.sulfate_components,
-            doc="Defines mass concentration for sulfate species",
+            doc="Defines mass concentration for the sulfate components",
         )
-        def conc_mass_sulfates_eqn(blk, t, i):
-            return blk.properties_out[t].conc_mass_comp[i] == blk.eps_conc_mass
+        def conc_mass_comp_sulfate_eqn(blk, t):
+            return (
+                blk.properties_out[t].conc_mass_comp["SO4_2-"]
+                == blk.eps_conc_mass
+            )
 
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     doc="Equality temperature equation",
+        # )
+        # def eq_temperature_rule(blk, t):
+        #     return blk.properties_out[t].temperature == blk.properties_in[t].temperature
+        #
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     doc="Equality pressure equation",
+        # )
+        # def eq_pressure_rule(blk, t):
+        #     return blk.properties_out[t].pressure == blk.properties_in[t].pressure

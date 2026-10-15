@@ -197,7 +197,7 @@ class SolventExtractionScaler(CustomScalerBase):
             t, e, j = idx
             self.scale_constraint_by_component(
                 con,
-                model.mscontactor.organic[t, e].conc_mol_comp[f"{j}_o"],
+                model.mscontactor.organic[t, e].conc_mol_comp[f"{j.rsplit('_', 1)[0]}_o"],
                 overwrite=overwrite,
             )
 
@@ -410,8 +410,10 @@ class SolventExtractionData(UnitModelBlockData):
         )
 
         def distribution_ratio_rule(b, t, s, e):
+            # Removes everything to the right of the last underscore
+            organic_name = f"{e.rsplit('_', 1)[0]}_o"
             return (
-                b.mscontactor.organic[t, s].conc_mol_comp[f"{e}_o"]
+                b.mscontactor.organic[t, s].conc_mol_comp[organic_name]
                 == b.mscontactor.heterogeneous_reactions[t, s].distribution_coefficient[
                     e
                 ]

@@ -138,6 +138,9 @@ class TranslatorSXPrecipData(TranslatorData):
 
     def fix_initialization_states(self):
         self.properties_in.fix_initialization_states()
+        for t in self.flowsheet().time:
+            self.properties_out[t].conc_mass_comp["HC2O4_-"].fix(value(self.eps))
+            self.properties_out[t].conc_mass_comp["C2O4_2-"].fix(value(self.eps))
 
     def build(self):
         """
@@ -213,19 +216,33 @@ class TranslatorSXPrecipData(TranslatorData):
                 == blk.oxalic_acid_feed
             )
 
-        self.near_zero_components = Set(
-            initialize=[
-                "C2O4_2-",
-                "HC2O4_-",
-            ]
-        )
         @self.Constraint(
             self.flowsheet().time,
-            self.near_zero_components,
-            doc="Defines mass concentration for the oxalate components",
+            doc="Equality temperature equation",
         )
-        def conc_mass_comp_oxalate_species_eqn(blk, t, i):
-            return (
-                blk.properties_out[t].conc_mass_comp[i]
-                == blk.eps
-            )
+        def eq_temperature_rule(blk, t):
+            return blk.properties_out[t].temperature == blk.properties_in[t].temperature
+
+        @self.Constraint(
+            self.flowsheet().time,
+            doc="Equality pressure equation",
+        )
+        def eq_pressure_rule(blk, t):
+            return blk.properties_out[t].pressure == blk.properties_in[t].pressure
+
+        # self.near_zero_components = Set(
+        #     initialize=[
+        #         "C2O4_2-",
+        #         "HC2O4_-",
+        #     ]
+        # )
+        # @self.Constraint(
+        #     self.flowsheet().time,
+        #     self.near_zero_components,
+        #     doc="Defines mass concentration for the oxalate components",
+        # )
+        # def conc_mass_comp_oxalate_species_eqn(blk, t, i):
+        #     return (
+        #         blk.properties_out[t].conc_mass_comp[i]
+        #         == blk.eps
+        #     )

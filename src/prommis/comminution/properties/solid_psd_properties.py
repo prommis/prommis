@@ -591,7 +591,7 @@ class SolidPSDParameterData(PhysicalParameterBlock):
             sum(size[i] for i in range(k + 1)) / (total + flow_mass_eps)
             for k in range(n_int)
         ]
-        target = smooth_min(target, cum[-1], eps=eps)
+        target = _attainable_passing_target(target, cum[-1])
         return size_at_passing_smooth(self._edge_values, cum, target, eps=eps)
 
     @classmethod
@@ -940,12 +940,20 @@ class SolidPSDStateBlockData(StateBlockData):
         """
         p = self.params
         edges = [p.size_edges[i] for i in p.size_edge_index]
+        sset = p.size_interval_set
         if comp is None:
-            cum = [self.cum_passing_size[k] for k in p.size_interval_set]
+            cum = [self.cum_passing_size[k] for k in sset]
+            retained = [self.flow_mass_size[k] for k in sset]
+            total = self.flow_mass_sized
         else:
-            cum = [self.cum_passing_comp_size[comp, k] for k in p.size_interval_set]
-        target = smooth_min(target, cum[-1], eps=eps)
-        return size_at_passing_smooth(edges, cum, target, eps=eps)
+            cum = [self.cum_passing_comp_size[comp, k] for k in sset]
+            retained = [self.flow_mass_sized_comp_size[comp, k] for k in sset]
+            total = self.flow_mass_sized_comp[comp]
+        total = total + units.convert(MASS_FLOW_EPS, to_units=units.get_units(total))
+        target = _attainable_passing_target(target, cum[-1])
+        return size_at_passing_smooth(
+            edges, cum, target, eps=eps, retained=retained, total=total
+        )
 
     def percentile_size_report(self, target, comp=None, *, rel_tol):
         """Report whether a smooth passing size agrees with linear bin interpolation.
@@ -1079,6 +1087,15 @@ class SolidPSDStateBlockData(StateBlockData):
         sv["temperature"] = self.temperature
         sv["pressure"] = self.pressure
         return sv
+
+
+def _attainable_passing_target(target, top_passing):
+    """Smoothly limit ``target`` to the stream's top-edge passing fraction.
+
+    The 1e-4 width (different from EPS_SMOOTH) keeps larger targets from
+    giving smaller sizes, even for nearly empty streams.
+    """
+    return smooth_min(target, top_passing, eps=1e-4)
 
 
 def _validate_percentile_targets(cfg_targets):

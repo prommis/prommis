@@ -16,7 +16,7 @@ from idaes.core.util.math import smooth_max, smooth_min
 
 # Default smoothing parameter: larger values round transitions more but
 # increase deviation from the unsmoothed function.
-EPS_SMOOTH = 1e-4
+EPS_SMOOTH = 1e-6
 
 
 def smooth_clamp(value, lower, upper, eps=EPS_SMOOTH):

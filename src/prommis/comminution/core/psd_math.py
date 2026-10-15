@@ -126,26 +126,36 @@ def finest_attainable_size(edges, target=P80_PASSING):
     return edges[0] + target * (edges[1] - edges[0])
 
 
-def size_at_passing_smooth(edges, cum, target, eps=EPS_SMOOTH):
+def size_at_passing_smooth(
+    edges, cum, target, eps=EPS_SMOOTH, retained=None, total=None
+):
     """Smooth, IPOPT-friendly linear-in-size percentile interpolation.
 
-    Approximate :func:`size_at_passing` with a smooth clamp of each interval's
-    fractional position. ``edges`` and ``cum`` may be floats or Pyomo
-    expressions; ``target`` and ``eps`` are floats.
+    Use ``cum`` at each interval's upper edge in ``edges`` and smoothly
+    approximate clamping each interval's fractional position to [0, 1].
+    An additive ``_EPS_DENOM`` (1e-6) keeps flat intervals evaluable.
+    This term and the smoothing can shift the result from
+    :func:`size_at_passing`; ``eps`` controls smoothing, not size error.
 
-    Add ``_EPS_DENOM = 1e-6`` to each cumulative increment to avoid division by
-    zero on flat bins. Both this floor and clamp smoothing affect accuracy;
-    ``eps`` is a smoothing parameter, not an interpolation-error bound.
-    This form does not validate inputs and can evaluate flat cumulative curves
-    for diagnostics. The numeric form skips flat intervals when bracketing.
+    When ``retained`` and ``total`` are supplied, each increment of ``cum``
+    must equal ``retained[m] / total``. The equivalent expression then uses
+    ``retained[m] + _EPS_DENOM * total`` as its denominator. This denominator
+    is positive for nonnegative retained flows and a positive total, which
+    helps Pyomo check expression bounds.
+
+    ``edges`` and ``cum`` may contain floats or Pyomo expressions;
+    ``target`` may also be a Pyomo expression. ``eps`` is numeric.
+    Inputs are not validated; the result has the size units of ``edges``.
     """
     cum = list(cum)
     n = len(cum)
     aug = [0.0] + cum
     result = edges[0]
     for m in range(n):
-        d_f = aug[m + 1] - aug[m]
-        frac = (target - aug[m]) / (d_f + _EPS_DENOM)
+        if retained is None:
+            frac = (target - aug[m]) / (aug[m + 1] - aug[m] + _EPS_DENOM)
+        else:
+            frac = (target - aug[m]) * total / (retained[m] + _EPS_DENOM * total)
         result = result + (edges[m + 1] - edges[m]) * smooth_clamp(frac, 0.0, 1.0, eps)
     return result
 

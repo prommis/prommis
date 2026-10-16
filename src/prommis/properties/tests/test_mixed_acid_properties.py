@@ -22,6 +22,7 @@ from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
     MixedAcidPropertiesScaler,
     _all_components_mw,
+    get_aliases,
 )
 
 
@@ -742,3 +743,63 @@ class TestAscorbateAcids(object):
             "fs.leach_soln.k_eq[HDha_Ka1]*fs.state[0.0].conc_mol_comp[HDha] "
             "- fs.state[0.0].conc_mol_comp[H_+]*fs.state[0.0].conc_mol_comp[Dha_-]"
         )
+
+
+class TestAliases(object):
+    @pytest.mark.unit
+    def test_default_aliases(self):
+        aliases = get_aliases(include_sulfates=False)
+
+        assert aliases["H2O"] == "H2O"
+        assert aliases["H"] == "H_+"
+        assert aliases["Cl"] == "Cl_-"
+        assert aliases["Fe"] == "Fe_3+"
+        assert aliases["Ca"] == "Ca_2+"
+        for e in ["Sc", "Y", "La", "Ce", "Pr", "Nd", "Sm", "Gd", "Dy", "Al"]:
+            assert aliases[e] == f"{e}_3+"
+
+        # No sulfates or oxalates unless requested
+        for j in ["SO4", "HSO4", "H2C2O4", "HC2O4_-", "C2O4_2-"]:
+            assert j not in aliases
+
+    @pytest.mark.unit
+    def test_sulfate_aliases(self):
+        aliases = get_aliases(include_sulfates=True)
+
+        assert aliases["SO4"] == "SO4_2-"
+        assert aliases["HSO4"] == "HSO4_-"
+        for j in ["H2C2O4", "HC2O4_-", "C2O4_2-"]:
+            assert j not in aliases
+
+    @pytest.mark.unit
+    def test_oxalate_aliases(self):
+        aliases = get_aliases(include_sulfates=False, include_oxalates=True)
+
+        # Oxalate species are always written with their charge
+        # and so map to themselves
+        assert aliases["H2C2O4"] == "H2C2O4"
+        assert aliases["HC2O4_-"] == "HC2O4_-"
+        assert aliases["C2O4_2-"] == "C2O4_2-"
+        for j in ["SO4", "HSO4"]:
+            assert j not in aliases
+
+        # Oxalate flag is off by default and does not change other entries
+        base = get_aliases(include_sulfates=False)
+        assert get_aliases(include_sulfates=False, include_oxalates=False) == base
+        assert {k: v for k, v in aliases.items() if k in base} == base
+
+    @pytest.mark.parametrize("include_sulfates", [True, False])
+    @pytest.mark.parametrize("include_oxalates", [True, False])
+    @pytest.mark.unit
+    def test_aliases_are_components(self, include_sulfates, include_oxalates):
+        m = ConcreteModel()
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.leach_soln = MixedAcidParameterBlock(
+            include_sulfates=include_sulfates, include_oxalates=include_oxalates
+        )
+
+        aliases = get_aliases(
+            include_sulfates=include_sulfates, include_oxalates=include_oxalates
+        )
+        for new_name in aliases.values():
+            assert new_name in m.fs.leach_soln.component_list

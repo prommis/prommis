@@ -11,8 +11,9 @@ used for equilibrium model of precipitation.
 Authors: Alejandro Garciadiego, Bo-Xun Wang
 """
 
-from pyomo.environ import Constraint, Param, Set, Var, units
+from pyomo.common.config import ConfigValue
 from pyomo.common.deprecation import deprecation_warning
+from pyomo.environ import Constraint, Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
 from idaes.core import (
@@ -26,6 +27,29 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+
+# Default names of the aqueous species (other than H2O)
+_aqueous_species = [
+    "Al",
+    "Ca",
+    "Fe",
+    "H",
+    "Cl",
+    "HSO4",
+    "SO4",
+    "H2C2O4",
+    "Sc",
+    "Y",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Sm",
+    "Gd",
+    "Dy",
+]
+_default_aqueous_aliases = {e: e for e in _aqueous_species}
+_default_aqueous_aliases["H2O"] = "H2O"
 
 
 # -----------------------------------------------------------------------------
@@ -47,7 +71,27 @@ class AqueousParameterData(PhysicalParameterBlock):
     where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
     estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
 
+    The names of the aqueous species are set by the ``aqueous_aliases``
+    configuration option, a dictionary of the form
+    ``aqueous_aliases[old_name] = new_name``. The default keeps the names
+    listed above. To use the names that include the ionic charge (e.g.,
+    "Fe_3+" instead of "Fe"), as is done in the MixedAcidParameterBlock, pass
+    ``aqueous_aliases=get_aliases(include_sulfates=True, include_oxalates=True)`` from
+    ``prommis.properties.mixed_acid_properties``. H2O is never renamed.
     """
+
+    CONFIG = PhysicalParameterBlock.CONFIG()
+    CONFIG.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default=_default_aqueous_aliases,
+            domain=dict,
+            description="Dictionary matching the default species names to "
+            "the names used in the aqueous stream. Used when, e.g., cation "
+            "charges are included in the species name, as is done in the "
+            "MixedAcidProperties. H2O is not renamed.",
+        ),
+    )
 
     def build(self):
         # Deprecation Notice for the Old Liquid Property Package
@@ -59,77 +103,67 @@ class AqueousParameterData(PhysicalParameterBlock):
 
         super().build()
 
+        # H2O is never renamed
+        aliases = self.config.aqueous_aliases
+
         self.liquid = Phase()
 
         # Solvents
         self.H2O = Component()
 
-        # Contaminants
-        self.Al = Component()
-        self.Ca = Component()
-        self.Fe = Component()
-        self.H = Component()
-        self.Cl = Component()
-        self.HSO4 = Component()
-        self.SO4 = Component()
-        self.H2C2O4 = Component()
+        # Contaminants and REEs
+        for e in _aqueous_species:
+            self.add_component(aliases[e], Component())
 
-        # REEs
-        self.Sc = Component()
-        self.Y = Component()
-        self.La = Component()
-        self.Ce = Component()
-        self.Pr = Component()
-        self.Nd = Component()
-        self.Sm = Component()
-        self.Gd = Component()
-        self.Dy = Component()
-
+        mw = {
+            "H2O": 18e-3,
+            "Sc": 44.946e-3,
+            "Y": 88.905e-3,
+            "La": 138.905e-3,
+            "Ce": 140.116e-3,
+            "Pr": 140.907e-3,
+            "Nd": 144.242e-3,
+            "Sm": 150.36e-3,
+            "Gd": 157.25e-3,
+            "Dy": 162.50e-3,
+            "Al": 26.982e-3,
+            "Ca": 40.078e-3,
+            "Fe": 55.845e-3,
+            "H": 1.008e-3,
+            "Cl": 35.453e-3,
+            "HSO4": 97.064e-3,
+            "SO4": 96.056e-3,
+            "H2C2O4": 90.03e-3,
+        }
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
-            initialize={
-                "H2O": 18e-3,
-                "Sc": 44.946e-3,
-                "Y": 88.905e-3,
-                "La": 138.905e-3,
-                "Ce": 140.116e-3,
-                "Pr": 140.907e-3,
-                "Nd": 144.242e-3,
-                "Sm": 150.36e-3,
-                "Gd": 157.25e-3,
-                "Dy": 162.50e-3,
-                "Al": 26.982e-3,
-                "Ca": 40.078e-3,
-                "Fe": 55.845e-3,
-                "H": 1.008e-3,
-                "Cl": 35.453e-3,
-                "HSO4": 97.064e-3,
-                "SO4": 96.056e-3,
-                "H2C2O4": 90.03e-3,
-            },
+            initialize={aliases[e]: val for e, val in mw.items()},
         )
 
         self.dissolved_elements = Set(
             initialize=[
-                "Al",
-                "Ca",
-                "Fe",
-                "Sc",
-                "Y",
-                "La",
-                "Ce",
-                "Pr",
-                "Nd",
-                "Sm",
-                "Gd",
-                "Dy",
-                "H",
-                "Cl",
-                "HSO4",
-                "SO4",
-                "H2C2O4",
-                "H2O",
+                aliases[e]
+                for e in [
+                    "Al",
+                    "Ca",
+                    "Fe",
+                    "Sc",
+                    "Y",
+                    "La",
+                    "Ce",
+                    "Pr",
+                    "Nd",
+                    "Sm",
+                    "Gd",
+                    "Dy",
+                    "H",
+                    "Cl",
+                    "HSO4",
+                    "SO4",
+                    "H2C2O4",
+                    "H2O",
+                ]
             ]
         )
 

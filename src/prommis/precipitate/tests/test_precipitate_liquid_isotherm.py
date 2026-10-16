@@ -164,4 +164,3 @@ def test_ionated_names_match_mixed_acid():
     )
 
     assert set(m.fs.prec_sol.component_list) <= set(m.fs.leach_soln.component_list)
-

@@ -131,4 +131,4 @@ def test_error_message_names_the_target_unit_and_the_key():
     with pytest.raises(ConfigurationError) as exc:
         _cfg_quantity(3.0, "geometry[diameter]", units.m)
     assert "geometry[diameter]" in str(exc.value)
-    assert "m" in str(exc.value)
+    assert "convertible to m (" in str(exc.value)

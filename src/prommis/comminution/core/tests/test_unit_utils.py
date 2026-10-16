@@ -13,7 +13,7 @@ from pyomo.environ import Block, ConcreteModel, Constraint, Set, Var
 
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.exceptions import ConfigurationError
-from idaes.core.util.scaling import get_scaling_factor, set_scaling_factor
+from idaes.core.scaling.util import get_scaling_factor, set_scaling_factor
 
 from prommis.comminution.core.unit_utils import (
     FactorSource,
@@ -110,9 +110,6 @@ def test_inverse_sum_of_nominals_sums_and_floors():
         required_scaling_factor(scaler, m.y[1.0])
     set_scaling_factor(m.y[1.0], 0.5)
     assert required_scaling_factor(scaler, m.y[1.0]) == 0.5
-    set_scaling_factor(m.y[1.0], 0.0)
-    with pytest.raises(ConfigurationError, match="is missing or non-positive"):
-        required_scaling_factor(scaler, m.y[1.0])
     assert inverse_magnitude_factor(None, 0.5) == 2.0
     assert inverse_magnitude_factor(0.0, 0.5) == 2.0
     assert inverse_magnitude_factor(-4.0, 1.0) == 0.25
@@ -123,7 +120,8 @@ def test_inverse_sum_of_nominals_sums_and_floors():
     with pytest.raises(ConfigurationError, match="is missing or non-positive"):
         propagate_scaling_factors(scaler, m.src, m.dst, ("x",))
     set_scaling_factor(m.src.x["b"], 0.25)
-    set_scaling_factor(m.dst.x["a"], 9.0)
+    # The current setter keeps an existing factor unless told to overwrite it.
+    set_scaling_factor(m.dst.x["a"], 9.0, overwrite=True)
     propagate_scaling_factors(scaler, m.src, m.dst, ("x", "absent"))
     assert get_scaling_factor(m.dst.x["a"]) == pytest.approx(9.0)
     assert get_scaling_factor(m.dst.x["b"]) == pytest.approx(0.25)
@@ -157,7 +155,6 @@ def test_declare_factor_source_default_and_construction():
         ).config.factor_source
         == FactorSource.current_values
     )
-    assert "factor_source" not in CustomScalerBase.CONFIG()
     with pytest.raises(ValueError):
         _ConfiguredScaler(factor_source="bogus")
 

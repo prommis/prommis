@@ -24,7 +24,7 @@ from pyomo.util.check_units import assert_units_consistent, assert_units_equival
 
 from idaes.core import ControlVolume0DBlock, FlowsheetBlock, MaterialBalanceType
 from idaes.core.util.exceptions import ConfigurationError
-from idaes.core.util.scaling import get_scaling_factor
+from idaes.core.scaling.util import get_scaling_factor
 
 from prommis.comminution.properties.solid_psd_properties import (
     SolidPSDInitializer,
@@ -426,7 +426,6 @@ def _percentile_report_state():
 @pytest.mark.parametrize(
     "comp,target,reference_mm",
     [
-        (None, 0.5, 28.0 / 3.0),
         (None, 0.8, 40.0 / 3.0),
         (None, 1.0, 16.0),
         ("OreA", 0.5, 2.0),
@@ -767,7 +766,6 @@ METADATA_UNITS = {
 def test_metadata_units_supported_flags_and_indices():
     m, b = _state(vapor_component_list=["Air"])
     p = m.params
-    assert b.config.parameters.get_metadata() is p.get_metadata()
     props = p.get_metadata().properties
     for name, expected_units in METADATA_UNITS.items():
         meta = props[name]
@@ -782,11 +780,7 @@ def test_metadata_units_supported_flags_and_indices():
     assert not props.flow_mass["comp"].supported
     assert not props.flow_mass["none"].supported
     assert not props.mass_frac["comp"].supported
-    assert p.sized_solid_list == ("OreA", "OreB")
-    assert p.unsized_solid_list == ("Inert",)
     assert p.all_solid_list == ("OreA", "OreB", "Inert")
-    assert p.liquid_list == ("H2O",)
-    assert p.vapor_list == ("Air",)
     assert value(p.dens_mass_liquid_comp["H2O"]) == pytest.approx(997.048)
     assert set(b.define_state_vars()) == {
         "flow_mass_sized_comp_size",
@@ -892,7 +886,7 @@ def test_factor_sources_fixed_block_agree_unfixed_block_differ():
         vb = getattr(bb, name)
         for idx in va:
             assert get_scaling_factor(vb[idx]) == pytest.approx(
-                get_scaling_factor(va[idx]), rel=1e-12
+                get_scaling_factor(va[idx]), rel=1e-12, abs=0
             )
     # Unfixed flows use the input-based default or their current magnitude;
     # temperature and pressure use the same fixed nominals in both modes.

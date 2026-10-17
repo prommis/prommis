@@ -33,8 +33,11 @@ class MultiComponentDiafiltrationStreamParameterData(PhysicalParameterBlock):
 
     Currently includes the following solutes:
         Li (lithium ion, +)
+        Na (sodium ion, +)
+        Ca (calcium ion, 2+)
         Co (cobalt ion, 2+)
         Al (aluminum ion, 3+)
+        La (lanthanum ion, 3+)
         Cl (chloride ion, -)
     """
 

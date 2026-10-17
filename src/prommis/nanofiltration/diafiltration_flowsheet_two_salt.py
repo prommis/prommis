@@ -22,7 +22,7 @@ from pyomo.environ import (
 from pyomo.network import Arc
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util.diagnostics_tools.diagnostics_toolbox import DiagnosticsToolbox
+from idaes.core.util import DiagnosticsToolbox
 from idaes.models.unit_models import Feed, Product
 
 import matplotlib.pyplot as plt
@@ -49,19 +49,19 @@ def main():
     anion_list = ["Cl"]
     inlet_flow_volume = {"feed": 12.5, "diafiltrate": 3.75}
     inlet_concentration = {
-        "feed": {"Li": 245, "Co": 288, "Cl": 821},
+        "feed": {"Li": 200, "Co": 200, "Cl": 600},
         "diafiltrate": {"Li": 14, "Co": 3, "Cl": 20},
     }
     include_boundary_layer = True
     NFE_module_length = 10
-    NFE_boundary_layer_thickness = 5
-    NFE_membrane_thickness = 5
+    NFE_boundary_layer_thickness = 10
+    NFE_membrane_thickness = 10
     non_Donnan_partition_dict = {
-        "Li": 0.7,
-        "Co": 0.3,
-        "Cl": 0.1,
+        "Li": 0.75,
+        "Co": 0.4,
+        "Cl": 0.05,
     }  # informed from data and sensitivity analysis
-    Dm_over_l_value = 40  # um/s, informed from data and sensitivity analysis
+    Dm_over_l_value = 60  # um/s, informed from data and sensitivity analysis
 
     m = build_flowsheet_model(
         cation_list,
@@ -79,15 +79,15 @@ def main():
     # fix the degrees of freedom
     fix_variables(m, inlet_flow_volume, inlet_concentration)
 
+    # add and connect flowsheet streams
+    add_and_connect_streams(m)
+
     # initialize membrane model
     initialized_membrane_model = m.fs.membrane.default_initializer(
         multiplier_H_feed=1.2,  # increase can help solver performance
         multiplier_H_perm=1,
     )
     initialized_membrane_model.initialize(m.fs.membrane)
-
-    # add and connect flowsheet streams
-    add_and_connect_streams(m)
 
     # check structural warnings
     dt = DiagnosticsToolbox(m)
@@ -195,14 +195,12 @@ def fix_variables(m, inlet_flow_volume, inlet_concentration):
                 inlet_concentration["diafiltrate"][j]
             )
 
+    # pressure may need to be adjusted to improve initialization depending on system
     feed_ionic_strength = value(m.fs.membrane.feed_ionic_strength[0])
-
     if feed_ionic_strength < 199:
         m.fs.membrane.applied_pressure.fix(5)
-    elif (feed_ionic_strength >= 199) and (feed_ionic_strength < 299):
+    elif feed_ionic_strength >= 199:
         m.fs.membrane.applied_pressure.fix(15)
-    elif feed_ionic_strength >= 299:
-        m.fs.membrane.applied_pressure.fix(20)
 
 
 def add_and_connect_streams(m):
@@ -315,7 +313,7 @@ def plot_results_by_length(m):
                 value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Li"])
             )
             conc_perm_lith.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Li"])
+                value(m.fs.membrane.permeate_local_conc_mol_comp[0, x_val, "Li"])
             )
             conc_ret_cob.append(
                 value(m.fs.membrane.retentate_conc_mol_comp[0, x_val, "Co"])
@@ -324,7 +322,7 @@ def plot_results_by_length(m):
                 value(m.fs.membrane.boundary_layer_conc_mol_comp[0, x_val, 1, "Co"])
             )
             conc_perm_cob.append(
-                value(m.fs.membrane.permeate_conc_mol_comp[0, x_val, "Co"])
+                value(m.fs.membrane.permeate_local_conc_mol_comp[0, x_val, "Co"])
             )
 
             water_flux.append(value(m.fs.membrane.volume_flux_water[0, x_val]))
@@ -332,21 +330,24 @@ def plot_results_by_length(m):
             Co_flux.append(value(m.fs.membrane.molar_ion_flux[0, x_val, "Co"]))
 
             Li_rejection_obs.append(
-                value(m.fs.membrane.observed_rejection_percent[0, x_val, "Li"])
+                value(m.fs.membrane.local_observed_rejection_percent[0, x_val, "Li"])
             )
             Li_rejection_act.append(
-                value(m.fs.membrane.actual_rejection_percent[0, x_val, "Li"])
+                value(m.fs.membrane.local_actual_rejection_percent[0, x_val, "Li"])
             )
             Co_rejection_obs.append(
-                value(m.fs.membrane.observed_rejection_percent[0, x_val, "Co"])
+                value(m.fs.membrane.local_observed_rejection_percent[0, x_val, "Co"])
             )
             Co_rejection_act.append(
-                value(m.fs.membrane.actual_rejection_percent[0, x_val, "Co"])
+                value(m.fs.membrane.local_actual_rejection_percent[0, x_val, "Co"])
             )
 
             percent_recovery.append(
                 (
-                    value(m.fs.membrane.permeate_flow_volume[0, x_val])
+                    (
+                        value(m.fs.membrane.total_feed_flow_volume[0])
+                        - value(m.fs.membrane.retentate_flow_volume[0, x_val])
+                    )
                     / (
                         value(m.fs.membrane.feed_flow_volume[0])
                         + value(m.fs.membrane.diafiltrate_flow_volume[0])

@@ -5,7 +5,6 @@
 # Please see the files COPYRIGHT.md and LICENSE.md for full copyright and license information.
 #####################################################################################################
 from pyomo.environ import (
-    TransformationFactory,
     assert_optimal_termination,
 )
 from pyomo.network import Arc
@@ -38,9 +37,6 @@ from prommis.examples.cmi_process_flowsheet.cmi_process_flowsheet import (
 from prommis.properties import HClStrippingParameterBlock
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
-
-# global var for storing scaled model
-_scaled_model = None
 
 
 @pytest.fixture(scope="module")
@@ -112,7 +108,6 @@ def test_build_flowsheet(system_frame):
 
 @pytest.mark.component
 def test_structural_issues(system_frame):
-    global _scaled_model
     model = system_frame
     set_operation_conditions(model)
 
@@ -120,45 +115,27 @@ def test_structural_issues(system_frame):
     dt.assert_no_structural_warnings()
 
 
-@pytest.fixture(scope="module")
-def scaled_model(system_frame):
+@pytest.mark.component
+def test_initialized_system(system_frame):
     model = system_frame
     set_operation_conditions(model)
     set_scaling(model)
-
-    # Apply scaling transformation
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(model, rename=False)
-
-    # Initialize the scaled model
-    initialize_system(scaled_model)
-
-    return scaled_model
-
-
-@pytest.mark.component
-def test_initialized_system(scaled_model):
-    initialize_system(scaled_model)
+    initialize_system(model)
 
 
 @pytest.mark.component
 @pytest.mark.solver
-def test_solve(scaled_model, system_frame):
+def test_solve(system_frame):
     model = system_frame
 
-    results = solve_system(scaled_model)
-
-    scaling = TransformationFactory("core.scale_model")
-    scaling.propagate_solution(scaled_model, model)
-
+    results = solve_system(model)
     assert_optimal_termination(results)
 
 
 @pytest.mark.component
 @pytest.mark.solver
-def test_numerical_issues(scaled_model):
-    # Use the already scaled model from test_solve
-    dt = DiagnosticsToolbox(scaled_model)
+def test_numerical_issues(system_frame):
+    dt = DiagnosticsToolbox(system_frame)
     dt.assert_no_numerical_warnings()
 
 

@@ -137,50 +137,15 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             "Cl": 1,  # mm2 / h
         }
 
-        if self.config.cation_list == ["Li"]:
-            salt_system = "Li_Cl"
-        elif self.config.cation_list == ["Na"]:
-            salt_system = "Na_Cl"
-        elif self.config.cation_list == ["Ca"]:
-            salt_system = "Ca_Cl2"
-        elif self.config.cation_list == ["Co"]:
-            salt_system = "Co_Cl2"
-        elif self.config.cation_list == ["Al"]:
-            salt_system = "Al_Cl3"
-        elif self.config.cation_list == ["La"]:
-            salt_system = "La_Cl3"
-        elif self.config.cation_list == ["Li", "Co"]:
-            salt_system = "Li_Co_Cl3"
-        elif self.config.cation_list == ["Li", "Al"]:
-            salt_system = "Li_Al_Cl4"
-        elif self.config.cation_list == ["Co", "Al"]:
-            salt_system = "Co_Al_Cl5"
-        elif self.config.cation_list == ["Li", "Co", "Al"]:
-            salt_system = "Li_Co_Al_Cl6"
-        elif self.config.cation_list == ["Na", "Ca"]:
-            salt_system = "Na_Ca_Cl3"
-        elif self.config.cation_list == ["Na", "La"]:
-            salt_system = "Na_La_Cl4"
-        elif self.config.cation_list == ["Ca", "La"]:
-            salt_system = "Ca_La_Cl5"
-        elif self.config.cation_list == ["Na", "Ca", "La"]:
-            salt_system = "Na_Ca_La_Cl6"
-
+        # assumes made with chloride salt
         num_solutes_dict = {
-            "Li_Cl": {"Li": 1, "Cl": 1},
-            "Na_Cl": {"Na": 1, "Cl": 1},
-            "Ca_Cl2": {"Ca": 1, "Cl": 2},
-            "Co_Cl2": {"Co": 1, "Cl": 2},
-            "Al_Cl3": {"Al": 1, "Cl": 3},
-            "La_Cl3": {"La": 1, "Cl": 3},
-            "Li_Co_Cl3": {"Li": 1, "Co": 1, "Cl": 3},
-            "Li_Al_Cl4": {"Li": 1, "Al": 1, "Cl": 4},
-            "Co_Al_Cl5": {"Co": 1, "Al": 1, "Cl": 5},
-            "Li_Co_Al_Cl6": {"Li": 1, "Co": 1, "Al": 1, "Cl": 6},
-            "Na_Ca_Cl3": {"Na": 1, "Ca": 1, "Cl": 3},
-            "Na_La_Cl4": {"Na": 1, "La": 1, "Cl": 4},
-            "Ca_La_Cl5": {"Ca": 1, "La": 1, "Cl": 5},
-            "Na_Ca_La_Cl6": {"Na": 1, "Ca": 1, "La": 1, "Cl": 6},
+            "Na": 2,
+            "Li": 2,
+            "Ca": 3,
+            "Co": 3,
+            "Al": 4,
+            "La": 4,
+            "Cl": None,
         }
 
         # create subset of property dictionaries to initialize parameters
@@ -195,7 +160,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             membrane_diffusion_coefficient_dict
         )
         initialize_sigma_dict = _subset(sigma_dict)
-        initialize_num_solutes_dict = _subset(num_solutes_dict[salt_system])
+        initialize_num_solutes_dict = _subset(num_solutes_dict)
 
         # initialize properties
         self.charge = Param(
@@ -232,7 +197,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             self.component_list,
             units=units.dimensionless,
             initialize=initialize_num_solutes_dict,
-            doc="Moles of ions dissociated in solution per mole of salt(s)",
+            doc="Moles of ions dissociated in solution per mole of chloride salt",
         )
 
         self._state_block_class = MultiComponentDiafiltrationSoluteStateBlock

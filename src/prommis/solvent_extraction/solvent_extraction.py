@@ -186,6 +186,7 @@ class SolventExtractionScaler(CustomScalerBase):
         Returns:
             None
         """
+        rxns = model.config.heterogeneous_reaction_package
 
         self.call_submodel_scaler_method(
             submodel=model.mscontactor,
@@ -195,9 +196,13 @@ class SolventExtractionScaler(CustomScalerBase):
         )
         for idx, con in model.distribution_extent_constraint.items():
             t, e, j = idx
+            if hasattr(rxns, "organic_aliases"):
+                org_species = rxns.organic_aliases[j]
+            else:
+                org_species = f"{j}_o"
             self.scale_constraint_by_component(
                 con,
-                model.mscontactor.organic[t, e].conc_mol_comp[f"{j.rsplit('_', 1)[0]}_o"],
+                model.mscontactor.organic[t, e].conc_mol_comp[org_species],
                 overwrite=overwrite,
             )
 
@@ -409,15 +414,24 @@ class SolventExtractionData(UnitModelBlockData):
             dynamic=self.config.dynamic,
         )
 
+        # TODO This constraint should live on the heterogeneous reaction
+        # block, not the SX block.
         def distribution_ratio_rule(b, t, s, e):
-            # Removes everything to the right of the last underscore
-            organic_name = f"{e.rsplit('_', 1)[0]}_o"
+            rxns = b.config.heterogeneous_reaction_package
+            if hasattr(rxns, "aqueous_aliases"):
+                aq_species = rxns.aqueous_aliases[e]
+            else:
+                aq_species = e
+            if hasattr(rxns, "organic_aliases"):
+                org_species = rxns.organic_aliases[e]
+            else:
+                org_species = f"{e}_o"
             return (
-                b.mscontactor.organic[t, s].conc_mol_comp[organic_name]
+                b.mscontactor.organic[t, s].conc_mol_comp[org_species]
                 == b.mscontactor.heterogeneous_reactions[t, s].distribution_coefficient[
                     e
                 ]
-                * b.mscontactor.aqueous[t, s].conc_mol_comp[e]
+                * b.mscontactor.aqueous[t, s].conc_mol_comp[aq_species]
             )
 
         self.distribution_extent_constraint = Constraint(

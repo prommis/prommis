@@ -108,6 +108,16 @@ The heat to the reactor can be provided either by external heating as a user inp
 with air to form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
 
 
+Species Naming
+--------------
+
+The solid inlet stream contains anhydrous oxalates, which the unit model matches to the metals in ``metal_list``
+using the ``react`` attribute of the solid property package. This attribute maps each solid oxalate to the name of
+the species it forms from in the aqueous stream. If the solid property package has an ``aqueous_aliases``
+configuration option (e.g., ``PrecipitateParameters``), the unit model uses it to translate the names in ``metal_list``
+(e.g., "Fe") to the names in ``react`` (e.g., "Fe_3+" when the names include the ionic charge, as in the
+``MixedAcidParameterBlock``). Solid property packages without this option are assumed to use the names in ``metal_list``.
+
 Streams
 -------
 
@@ -884,9 +894,15 @@ constructed,
 
         # Currently the solid feed port contains anhydrous REE oxalate
         # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
-        reversed_react = dict(
-            map(reversed, self.config.property_package_precipitate_solid.react.items())
-        )
+        solid_props = self.config.property_package_precipitate_solid
+        reversed_react = dict(map(reversed, solid_props.react.items()))
+        # react gives the name of the species in the aqueous stream, which
+        # may include the ionic charge (e.g., Fe_3+). Translate the names in
+        # metal_list to match.
+        if hasattr(solid_props.config, "aqueous_aliases"):
+            aliases = solid_props.config.aqueous_aliases
+        else:
+            aliases = {i: i for i in self.metal_list}
 
         @self.Constraint(
             self.flowsheet().config.time,
@@ -895,7 +911,7 @@ constructed,
         )
         def flow_mol_comp_feed_eqn(b, t, i):
             return b.flow_mol_comp_feed[t, i] == pyunits.convert(
-                b.solid_in[t].flow_mol_comp[reversed_react[i]],
+                b.solid_in[t].flow_mol_comp[reversed_react[aliases[i]]],
                 to_units=pyunits.mol / pyunits.second,
             )
 

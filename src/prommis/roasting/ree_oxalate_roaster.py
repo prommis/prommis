@@ -108,16 +108,6 @@ The heat to the reactor can be provided either by external heating as a user inp
 with air to form a hot :ce:`O2`-containing flue gas. The gas inlet stream is an :ce:`O2`-containing hot flue gas.
 
 
-Species Naming
---------------
-
-The solid inlet stream contains anhydrous oxalates, which the unit model matches to the metals in ``metal_list``
-using the ``react`` attribute of the solid property package. This attribute maps each solid oxalate to the name of
-the species it forms from in the aqueous stream. If the solid property package has an ``aqueous_aliases``
-configuration option (e.g., ``PrecipitateParameters``), the unit model uses it to translate the names in ``metal_list``
-(e.g., "Fe") to the names in ``react`` (e.g., "Fe_3+" when the names include the ionic charge, as in the
-``MixedAcidParameterBlock``). Solid property packages without this option are assumed to use the names in ``metal_list``.
-
 Streams
 -------
 

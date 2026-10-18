@@ -26,7 +26,6 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 
-# Default names of the aqueous species (other than H2O)
 _aqueous_species = [
     "Al",
     "Ca",
@@ -69,14 +68,6 @@ class AqueousParameterData(PhysicalParameterBlock):
     Minerals, 2022, 12. 236
 
     self.split can be substituted by surrogate model
-
-    The names of the aqueous species are set by the ``aqueous_aliases``
-    configuration option, a dictionary of the form
-    ``aqueous_aliases[old_name] = new_name``. The default keeps the names
-    listed above. To use the names that include the ionic charge (e.g.,
-    "Fe_3+" instead of "Fe"), as is done in the MixedAcidParameterBlock, pass
-    ``aqueous_aliases=get_aliases(include_sulfates=True)`` from
-    ``prommis.properties.mixed_acid_properties``. H2O is never renamed.
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -102,7 +93,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         # Solvents
         self.H2O = Component()
 
-        # Contaminants and REEs
         for e in _aqueous_species:
             self.add_component(aliases[e], Component())
 

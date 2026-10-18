@@ -28,7 +28,6 @@ from idaes.core import (
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
 
-# Default names of the aqueous species (other than H2O)
 _aqueous_species = [
     "Al",
     "Ca",
@@ -70,14 +69,6 @@ class AqueousParameterData(PhysicalParameterBlock):
 
     where :math:`Conversion` is the conversion of component c, :math:`\epsilon` and :math:`n_{DA}` are the parameters
     estimated based on Minteq data, :math:`Oxalic Acid Dosage` is the amount of oxalic acid added into the precipitator.
-
-    The names of the aqueous species are set by the ``aqueous_aliases``
-    configuration option, a dictionary of the form
-    ``aqueous_aliases[old_name] = new_name``. The default keeps the names
-    listed above. To use the names that include the ionic charge (e.g.,
-    "Fe_3+" instead of "Fe"), as is done in the MixedAcidParameterBlock, pass
-    ``aqueous_aliases=get_aliases(include_sulfates=True, include_oxalates=True)`` from
-    ``prommis.properties.mixed_acid_properties``. H2O is never renamed.
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -103,7 +94,6 @@ class AqueousParameterData(PhysicalParameterBlock):
 
         super().build()
 
-        # H2O is never renamed
         aliases = self.config.aqueous_aliases
 
         self.liquid = Phase()
@@ -111,7 +101,6 @@ class AqueousParameterData(PhysicalParameterBlock):
         # Solvents
         self.H2O = Component()
 
-        # Contaminants and REEs
         for e in _aqueous_species:
             self.add_component(aliases[e], Component())
 

@@ -24,6 +24,22 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
+_solid_to_element = {
+    "Sc2(C2O4)3(s)": "Sc",
+    "Y2(C2O4)3(s)": "Y",
+    "La2(C2O4)3(s)": "La",
+    "Ce2(C2O4)3(s)": "Ce",
+    "Pr2(C2O4)3(s)": "Pr",
+    "Nd2(C2O4)3(s)": "Nd",
+    "Sm2(C2O4)3(s)": "Sm",
+    "Gd2(C2O4)3(s)": "Gd",
+    "Dy2(C2O4)3(s)": "Dy",
+    "Al2(C2O4)3(s)": "Al",
+    "Ca(C2O4)(s)": "Ca",
+    "Fe2(C2O4)3(s)": "Fe",
+}
+_default_aqueous_aliases = {e: e for e in _solid_to_element.values()}
+
 # -----------------------------------------------------------------------------
 # Precipitate solution property package
 
@@ -36,6 +52,17 @@ def _config_blk_build(blk):
             domain=set,
             description="Set of key components",
             doc="(set) Set of key components",
+        ),
+    )
+    blk.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default=_default_aqueous_aliases,
+            domain=dict,
+            description="Dictionary matching element names to species in "
+            "the aqueous stream. Used when, e.g., cation charges are "
+            "included in the species name, as is done in the "
+            "MixedAcidProperties.",
         ),
     )
 
@@ -56,7 +83,6 @@ class PrecipitateParametersData(PhysicalParameterBlock):
     * Rare Earth Oxalates: "Al2(C2O4)3(s)", "Fe2(C2O4)3(s)", "Sc2(C2O4)3(s)",
     "Y2(C2O4)3(s)", "La2(C2O4)3(s)", "Ce2(C2O4)3(s)", "Pr2(C2O4)3(s)",
     "Nd2(C2O4)3(s)", "Sm2(C2O4)3(s)", "Gd2(C2O4)3(s)", "Dy2(C2O4)3(s)"
-
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -84,19 +110,11 @@ class PrecipitateParametersData(PhysicalParameterBlock):
 
         self.component_list = comp_list
 
+        # Maps each solid to the name of the corresponding species in the
+        # aqueous stream
         self.react = {
-            "Sc2(C2O4)3(s)": "Sc_3+",
-            "Y2(C2O4)3(s)": "Y_3+",
-            "La2(C2O4)3(s)": "La_3+",
-            "Ce2(C2O4)3(s)": "Ce_3+",
-            "Pr2(C2O4)3(s)": "Pr_3+",
-            "Nd2(C2O4)3(s)": "Nd_3+",
-            "Sm2(C2O4)3(s)": "Sm_3+",
-            "Gd2(C2O4)3(s)": "Gd_3+",
-            "Dy2(C2O4)3(s)": "Dy_3+",
-            "Al2(C2O4)3(s)": "Al_3+",
-            "Ca(C2O4)(s)": "Ca_2+",
-            "Fe2(C2O4)3(s)": "Fe_3+",
+            solid: self.config.aqueous_aliases[element]
+            for solid, element in _solid_to_element.items()
         }
 
         self.stoich = Param(
@@ -133,7 +151,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
                 "Dy2(C2O4)3(s)": 769.21 * 1e-3,
                 "Al2(C2O4)3(s)": 318.02 * 1e-3,
                 "Ca(C2O4)(s)": 128.097 * 1e-3,
-                "Fe2(C2O4)3(s)": 143.86 * 1e-3,
+                "Fe2(C2O4)3(s)": 375.75 * 1e-3,
             },
         )
 

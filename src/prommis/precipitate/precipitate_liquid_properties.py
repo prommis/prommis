@@ -10,6 +10,7 @@ Initial property package for precipitate.
 Authors: Alejandro Garciadiego
 """
 
+from pyomo.common.config import ConfigValue
 from pyomo.environ import Param, Set, Var, units
 
 import idaes.core.util.scaling as iscale
@@ -24,6 +25,27 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 from idaes.core.util.misc import add_object_reference
+
+_aqueous_species = [
+    "Al",
+    "Ca",
+    "Fe",
+    "H",
+    "Cl",
+    "HSO4",
+    "SO4",
+    "Sc",
+    "Y",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Sm",
+    "Gd",
+    "Dy",
+]
+_default_aqueous_aliases = {e: e for e in _aqueous_species}
+_default_aqueous_aliases["H2O"] = "H2O"
 
 
 # -----------------------------------------------------------------------------
@@ -48,103 +70,106 @@ class AqueousParameterData(PhysicalParameterBlock):
     self.split can be substituted by surrogate model
     """
 
+    CONFIG = PhysicalParameterBlock.CONFIG()
+    CONFIG.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default=_default_aqueous_aliases,
+            domain=dict,
+            description="Dictionary matching the default species names to "
+            "the names used in the aqueous stream. Used when, e.g., cation "
+            "charges are included in the species name, as is done in the "
+            "MixedAcidProperties. H2O is not renamed.",
+        ),
+    )
+
     def build(self):
         super().build()
+
+        aliases = self.config.aqueous_aliases
 
         self.liquid = Phase()
 
         # Solvents
         self.H2O = Component()
 
-        # Contaminants
-        self.Al = Component()
-        self.Ca = Component()
-        self.Fe = Component()
-        self.H = Component()
-        self.Cl = Component()
-        self.HSO4 = Component()
-        self.SO4 = Component()
-
-        # REEs
-        self.Sc = Component()
-        self.Y = Component()
-        self.La = Component()
-        self.Ce = Component()
-        self.Pr = Component()
-        self.Nd = Component()
-        self.Sm = Component()
-        self.Gd = Component()
-        self.Dy = Component()
+        for e in _aqueous_species:
+            self.add_component(aliases[e], Component())
 
         # parameter based on pH 1.28
         # TODO add surrogate model/equation
+        split = {
+            "H2O": 1e-20,
+            "Sc": 31.61,
+            "Y": 74.46,
+            "La": 51.51,
+            "Ce": 68.07,
+            "Pr": 78,
+            "Nd": 81.55,
+            "Sm": 87.35,
+            "Gd": 88.01,
+            "Dy": 87.16,
+            "Al": 0.9,
+            "Ca": 20.50,
+            "Fe": 2.44,
+            "H": 1e-20,
+            "Cl": 1e-20,
+            "HSO4": 1e-20,
+            "SO4": 1e-20,
+        }
         self.split = Param(
             self.component_list,
             units=units.kg / units.kg,
-            initialize={
-                "H2O": 1e-20,
-                "Sc_3+": 31.61,
-                "Y_3+": 74.46,
-                "La_3+": 51.51,
-                "Ce_3+": 68.07,
-                "Pr_3+": 78,
-                "Nd_3+": 81.55,
-                "Sm_3+": 87.35,
-                "Gd_3+": 88.01,
-                "Dy_3+": 87.16,
-                "Al_3+": 0.9,
-                "Ca_2+": 20.50,
-                "Fe_3+": 2.44,
-                "H_+": 1e-20,
-                "Cl_-": 1e-20,
-                "HSO4_-": 1e-20,
-                "SO4_2-": 1e-20,
-            },
+            initialize={aliases[e]: val for e, val in split.items()},
         )
 
+        mw = {
+            "H2O": 18e-3,
+            "Sc": 44.946e-3,
+            "Y": 88.905e-3,
+            "La": 138.905e-3,
+            "Ce": 140.116e-3,
+            "Pr": 140.907e-3,
+            "Nd": 144.242e-3,
+            "Sm": 150.36e-3,
+            "Gd": 157.25e-3,
+            "Dy": 162.50e-3,
+            "Al": 26.982e-3,
+            "Ca": 40.078e-3,
+            "Fe": 55.845e-3,
+            "H": 1.008e-3,
+            "Cl": 35.453e-3,
+            "HSO4": 97.064e-3,
+            "SO4": 96.056e-3,
+        }
         self.mw = Param(
             self.component_list,
             units=units.kg / units.mol,
-            initialize={
-                "H2O": 18e-3,
-                "Sc_3+": 44.946e-3,
-                "Y_3+": 88.905e-3,
-                "La_3+": 138.905e-3,
-                "Ce_3+": 140.116e-3,
-                "Pr_3+": 140.907e-3,
-                "Nd_3+": 144.242e-3,
-                "Sm_3+": 150.36e-3,
-                "Gd_3+": 157.25e-3,
-                "Dy_3+": 162.50e-3,
-                "Al_3+": 26.982e-3,
-                "Ca_2+": 40.078e-3,
-                "Fe_3+": 55.845e-3,
-                "H_+": 1.008e-3,
-                "Cl_-": 35.453e-3,
-                "HSO4_-": 97.064e-3,
-                "SO4_2-": 96.056e-3,
-            },
+            initialize={aliases[e]: val for e, val in mw.items()},
         )
 
         self.dissolved_elements = Set(
             initialize=[
-                "Al_3+",
-                "Ca_3+",
-                "Fe_3+",
-                "Sc_3+",
-                "Y_3+",
-                "La_3+",
-                "Ce_3+",
-                "Pr_3+",
-                "Nd_3+",
-                "Sm_3+",
-                "Gd_3+",
-                "Dy_3+",
-                "H_+",
-                "Cl_-",
-                "HSO4_-",
-                "SO4_2-",
-                "H2O",
+                aliases[e]
+                for e in [
+                    "Al",
+                    "Ca",
+                    "Fe",
+                    "Sc",
+                    "Y",
+                    "La",
+                    "Ce",
+                    "Pr",
+                    "Nd",
+                    "Sm",
+                    "Gd",
+                    "Dy",
+                    "H",
+                    "Cl",
+                    "HSO4",
+                    "SO4",
+                    "H2O",
+                ]
             ]
         )
 

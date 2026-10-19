@@ -197,9 +197,9 @@ def fix_variables(m, inlet_flow_volume, inlet_concentration):
 
     # pressure may need to be adjusted to improve initialization depending on system
     feed_ionic_strength = value(m.fs.membrane.feed_ionic_strength[0])
-    if feed_ionic_strength < 199:
+    if feed_ionic_strength < 201:
         m.fs.membrane.applied_pressure.fix(5)
-    elif feed_ionic_strength >= 199:
+    elif feed_ionic_strength >= 201:
         m.fs.membrane.applied_pressure.fix(15)
 
 

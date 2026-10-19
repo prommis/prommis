@@ -413,9 +413,11 @@ class MultiComponentDiafiltrationInitializer(InitializerBase):
                             params["a"] * exp(params["b"] * value(conc_f_tot[t, k]))
                             + params["c"]
                         )
-                        conc_perm[t, x, k].set_value(
-                            value(conc_ret[t, x, k]) * round(S_guess, 1)
-                        )
+                        if S_guess < 0.1:
+                            S_guess = float(f"{S_guess:.1g}")
+                        else:
+                            S_guess = round(S_guess, 1)
+                        conc_perm[t, x, k].set_value(value(conc_ret[t, x, k]) * S_guess)
                     calculate_variable_from_constraint(
                         conc_perm[t, x, a0],
                         model.electroneutrality_permeate[t, x],
@@ -1474,7 +1476,7 @@ and used when constructing these,
                         * T
                         * sum(
                             (n[k] * sigma[k] * (conc_r[t, x, k] - conc_p[t, x, k]))
-                            for k in blk.cation
+                            for k in blk.cations
                         )
                     ),
                     to_units=units.bar,

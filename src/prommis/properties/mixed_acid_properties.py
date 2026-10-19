@@ -93,7 +93,7 @@ _all_components_mw = {
 }
 
 
-def get_aliases(include_sulfates: bool, include_oxalates: bool = False) -> dict:
+def get_aliases(include_sulfates: bool = False, include_oxalates: bool = False) -> dict:
     """
     Helper function to provide a dictionary to translate between
     the species names that were used previously and the new names

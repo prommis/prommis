@@ -928,7 +928,8 @@ constructed,
                     b.gas_out[t].flow_mol_comp[i]
                     == b.gas_in[t].flow_mol_comp[i]
                     + sum(
-                        b.flow_mol_comp_feed[t, j] * b.xH2O_oxalate_list_all[b.base_metal[j]]
+                        b.flow_mol_comp_feed[t, j]
+                        * b.xH2O_oxalate_list_all[b.base_metal[j]]
                         for j in b.metal_list
                     )
                     + b.flow_mol_moist_feed[t]
@@ -937,14 +938,18 @@ constructed,
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
                     i
                 ] - sum(
-                    b.xC2O4_oxalate_list_all[b.base_metal[j]] / 2 * b.flow_mol_comp_feed[t, j]
+                    b.xC2O4_oxalate_list_all[b.base_metal[j]]
+                    / 2
+                    * b.flow_mol_comp_feed[t, j]
                     for j in b.metal_list
                 )
             elif i == "CO2":
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
                     i
                 ] + sum(
-                    b.xC2O4_oxalate_list_all[b.base_metal[j]] * 2 * b.flow_mol_comp_feed[t, j]
+                    b.xC2O4_oxalate_list_all[b.base_metal[j]]
+                    * 2
+                    * b.flow_mol_comp_feed[t, j]
                     for j in b.metal_list
                 )
             else:
@@ -1011,9 +1016,13 @@ constructed,
         )
         def enth_mol_comp_feed_eqn(b, t, i):
             temp = b.solid_in[t].temperature
-            return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[b.base_metal[i]] + b.cp0_oxalate_list_all[b.base_metal[i]] * (
+            return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[
+                b.base_metal[i]
+            ] + b.cp0_oxalate_list_all[b.base_metal[i]] * (
                 temp - b.temp_ref
-            ) + 0.5 * b.cp1_oxalate_list_all[b.base_metal[i]] * (
+            ) + 0.5 * b.cp1_oxalate_list_all[
+                b.base_metal[i]
+            ] * (
                 temp * temp - b.temp_ref * b.temp_ref
             )
 
@@ -1040,9 +1049,13 @@ constructed,
         )
         def enth_mol_comp_product_eqn(b, t, i):
             temp_prod = b.gas_out[t].temperature
-            return b.enth_mol_comp_product[t, i] == b.enth0_oxide_list_all[b.base_metal[i]] + b.cp0_oxide_list_all[b.base_metal[i]] * (
+            return b.enth_mol_comp_product[t, i] == b.enth0_oxide_list_all[
+                b.base_metal[i]
+            ] + b.cp0_oxide_list_all[b.base_metal[i]] * (
                 temp_prod - b.temp_ref
-            ) + 0.5 * b.cp1_oxide_list_all[b.base_metal[i]] * (
+            ) + 0.5 * b.cp1_oxide_list_all[
+                b.base_metal[i]
+            ] * (
                 temp_prod * temp_prod - b.temp_ref * b.temp_ref
             )
 

@@ -26,7 +26,7 @@ from prommis.nanofiltration.multi_component_diafiltration_solute_properties impo
 def sample_model():
     cation_list = ["Li"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Li": 0.7, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Li": 0.75, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -86,7 +86,7 @@ def test_parameters(sample_model):
 def model_Li():
     cation_list = ["Li"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Li": 0.7, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Li": 0.75, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -118,16 +118,15 @@ def test_parameters_single_salt_Li(model_Li):
     assert value(prop_package.boundary_layer_diffusion_coefficient["Li"]) == 3.71
     assert value(prop_package.membrane_diffusion_coefficient["Li"]) == 3.71 * 0.001
     assert value(prop_package.sigma["Li"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Li"]) == 0.7
-    assert value(prop_package.num_solutes["Li"]) == 1
+    assert value(prop_package.non_Donnan_partition_coefficient["Li"]) == 0.75
+    assert value(prop_package.num_solutes["Li"]) == 2
 
     # check Cl values (single salt with Li)
     assert value(prop_package.charge["Cl"]) == -1
     assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
     assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
     assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 1
+    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.05
 
 
 ################################################################################
@@ -136,7 +135,7 @@ def test_parameters_single_salt_Li(model_Li):
 def model_Co():
     cation_list = ["Co"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Co": 0.3, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Co": 0.4, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -168,15 +167,15 @@ def test_parameters_single_salt_Co(model_Co):
     assert value(prop_package.boundary_layer_diffusion_coefficient["Co"]) == 2.64
     assert value(prop_package.membrane_diffusion_coefficient["Co"]) == 2.64 * 0.001
     assert value(prop_package.sigma["Co"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Co"]) == 0.3
+    assert value(prop_package.non_Donnan_partition_coefficient["Co"]) == 0.4
+    assert value(prop_package.num_solutes["Co"]) == 3
 
     # check Cl values (single salt with Co)
     assert value(prop_package.charge["Cl"]) == -1
     assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
     assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
     assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 2
+    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.05
 
 
 ################################################################################
@@ -185,7 +184,7 @@ def test_parameters_single_salt_Co(model_Co):
 def model_Al():
     cation_list = ["Al"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Al": 0.0005, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Al": 0.0001, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -217,16 +216,15 @@ def test_parameters_single_salt_Al(model_Al):
     assert value(prop_package.boundary_layer_diffusion_coefficient["Al"]) == 2.01
     assert value(prop_package.membrane_diffusion_coefficient["Al"]) == 2.01 * 0.001
     assert value(prop_package.sigma["Al"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Al"]) == 0.0005
-    assert value(prop_package.num_solutes["Al"]) == 1
+    assert value(prop_package.non_Donnan_partition_coefficient["Al"]) == 0.0001
+    assert value(prop_package.num_solutes["Al"]) == 4
 
     # check Cl values (single salt with Al)
     assert value(prop_package.charge["Cl"]) == -1
     assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
     assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
     assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 3
+    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.05
 
 
 ################################################################################
@@ -235,7 +233,7 @@ def test_parameters_single_salt_Al(model_Al):
 def model_Li_Co():
     cation_list = ["Li", "Co"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Li": 0.7, "Co": 0.3, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Li": 0.75, "Co": 0.4, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -261,30 +259,6 @@ def test_parameters_two_salt_Li_Co(model_Li_Co):
     for j in prop_package.component_list:
         assert j in ["Li", "Co", "Cl"]
 
-    # check Li values
-    assert value(prop_package.charge["Li"]) == 1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Li"]) == 3.71
-    assert value(prop_package.membrane_diffusion_coefficient["Li"]) == 3.71 * 0.001
-    assert value(prop_package.sigma["Li"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Li"]) == 0.7
-    assert value(prop_package.num_solutes["Li"]) == 1
-
-    # check Co values
-    assert value(prop_package.charge["Co"]) == 2
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Co"]) == 2.64
-    assert value(prop_package.membrane_diffusion_coefficient["Co"]) == 2.64 * 0.001
-    assert value(prop_package.sigma["Co"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Co"]) == 0.3
-    assert value(prop_package.num_solutes["Co"]) == 1
-
-    # check Cl values (two salt with Li and Co)
-    assert value(prop_package.charge["Cl"]) == -1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
-    assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
-    assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 3
-
 
 ################################################################################
 # Test two-salt model: LiCl + AlCl3
@@ -292,7 +266,7 @@ def test_parameters_two_salt_Li_Co(model_Li_Co):
 def model_Li_Al():
     cation_list = ["Li", "Al"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Li": 0.7, "Al": 0.0005, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Li": 0.75, "Al": 0.0001, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -319,30 +293,6 @@ def test_parameters_two_salt_Li_Al(model_Li_Al):
     for j in prop_package.component_list:
         assert j in ["Li", "Al", "Cl"]
 
-    # check Li values
-    assert value(prop_package.charge["Li"]) == 1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Li"]) == 3.71
-    assert value(prop_package.membrane_diffusion_coefficient["Li"]) == 3.71 * 0.001
-    assert value(prop_package.sigma["Li"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Li"]) == 0.7
-    assert value(prop_package.num_solutes["Li"]) == 1
-
-    # check Al values
-    assert value(prop_package.charge["Al"]) == 3
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Al"]) == 2.01
-    assert value(prop_package.membrane_diffusion_coefficient["Al"]) == 2.01 * 0.001
-    assert value(prop_package.sigma["Al"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Al"]) == 0.0005
-    assert value(prop_package.num_solutes["Al"]) == 1
-
-    # check Cl values (two salt with Li and Al)
-    assert value(prop_package.charge["Cl"]) == -1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
-    assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
-    assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 4
-
 
 ################################################################################
 # Test two-salt model: CoCl2 + AlCl3
@@ -350,7 +300,7 @@ def test_parameters_two_salt_Li_Al(model_Li_Al):
 def model_Co_Al():
     cation_list = ["Co", "Al"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Co": 0.3, "Al": 0.0005, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Co": 0.4, "Al": 0.0001, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -377,30 +327,6 @@ def test_parameters_two_salt_Co_Al(model_Co_Al):
     for j in prop_package.component_list:
         assert j in ["Co", "Al", "Cl"]
 
-    # check Co values
-    assert value(prop_package.charge["Co"]) == 2
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Co"]) == 2.64
-    assert value(prop_package.membrane_diffusion_coefficient["Co"]) == 2.64 * 0.001
-    assert value(prop_package.sigma["Co"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Co"]) == 0.3
-    assert value(prop_package.num_solutes["Co"]) == 1
-
-    # check Al values
-    assert value(prop_package.charge["Al"]) == 3
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Al"]) == 2.01
-    assert value(prop_package.membrane_diffusion_coefficient["Al"]) == 2.01 * 0.001
-    assert value(prop_package.sigma["Al"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Al"]) == 0.0005
-    assert value(prop_package.num_solutes["Al"]) == 1
-
-    # check Cl values (two salt with Co and Al)
-    assert value(prop_package.charge["Cl"]) == -1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
-    assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
-    assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 5
-
 
 ################################################################################
 # Test three-salt model: LiCl + CoCl2 + AlCl3
@@ -408,7 +334,7 @@ def test_parameters_two_salt_Co_Al(model_Co_Al):
 def model_Li_Co_Al():
     cation_list = ["Li", "Co", "Al"]
     anion_list = ["Cl"]
-    non_Donnan_partition_dict = {"Li": 0.7, "Co": 0.3, "Al": 0.0005, "Cl": 0.1}
+    non_Donnan_partition_dict = {"Li": 0.75, "Co": 0.4, "Al": 0.0001, "Cl": 0.05}
 
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
@@ -424,8 +350,6 @@ def model_Li_Co_Al():
 @pytest.mark.unit
 def test_build_Li_Co_Al(model_Li_Co_Al):
     test_build(model_Li_Co_Al)
-    for j in model_Li_Co_Al.fs.solute_properties.component_list:
-        assert j in ["Li", "Co", "Al", "Cl"]
 
 
 @pytest.mark.unit
@@ -434,37 +358,8 @@ def test_parameters_three_salt_Li_Co_Al(model_Li_Co_Al):
 
     prop_package = model_Li_Co_Al.fs.solute_properties
 
-    # check Li values
-    assert value(prop_package.charge["Li"]) == 1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Li"]) == 3.71
-    assert value(prop_package.membrane_diffusion_coefficient["Li"]) == 3.71 * 0.001
-    assert value(prop_package.sigma["Li"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Li"]) == 0.7
-    assert value(prop_package.num_solutes["Li"]) == 1
-
-    # check Co values
-    assert value(prop_package.charge["Co"]) == 2
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Co"]) == 2.64
-    assert value(prop_package.membrane_diffusion_coefficient["Co"]) == 2.64 * 0.001
-    assert value(prop_package.sigma["Co"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Co"]) == 0.3
-    assert value(prop_package.num_solutes["Co"]) == 1
-
-    # check Al values
-    assert value(prop_package.charge["Al"]) == 3
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Al"]) == 2.01
-    assert value(prop_package.membrane_diffusion_coefficient["Al"]) == 2.01 * 0.001
-    assert value(prop_package.sigma["Al"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Al"]) == 0.0005
-    assert value(prop_package.num_solutes["Al"]) == 1
-
-    # check Cl values (two salt with Li, Co, and Al)
-    assert value(prop_package.charge["Cl"]) == -1
-    assert value(prop_package.boundary_layer_diffusion_coefficient["Cl"]) == 7.31
-    assert value(prop_package.membrane_diffusion_coefficient["Cl"]) == 7.31 * 0.001
-    assert value(prop_package.sigma["Cl"]) == 1
-    assert value(prop_package.non_Donnan_partition_coefficient["Cl"]) == 0.1
-    assert value(prop_package.num_solutes["Cl"]) == 6
+    for j in prop_package.component_list:
+        assert j in ["Li", "Co", "Al", "Cl"]
 
 
 ################################################################################

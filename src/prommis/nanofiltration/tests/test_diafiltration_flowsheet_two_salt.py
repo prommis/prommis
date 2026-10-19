@@ -8,7 +8,7 @@
 Tests the two-salt diafiltration flowsheet
 """
 
-from idaes.core.util.diagnostics_tools.diagnostics_toolbox import DiagnosticsToolbox
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.testing import assert_solution_equivalent
 from idaes.models.unit_models import Feed, Product
 
@@ -59,18 +59,18 @@ def test_main():
     assert isinstance(membrane_results_plot, plt.Figure)
 
     test_dict = {
-        "applied_pressure": {(0): (33.533, 1e-4, None)},
+        "applied_pressure": {(0): (11.356, 1e-4, None)},
         "retentate_flow_volume": {(0, 1): (12.970, 1e-4, None)},
         "retentate_conc_mol_comp": {
-            (0, 1, "Li"): (195.37, 1e-4, None),
-            (0, 1, "Co"): (255.02, 1e-4, None),
-            (0, 1, "Cl"): (705.41, 1e-4, None),
+            (0, 1, "Li"): (162.79, 1e-4, None),
+            (0, 1, "Co"): (177.57, 1e-4, None),
+            (0, 1, "Cl"): (517.93, 1e-4, None),
         },
-        "permeate_flow_volume": {(0, 1): (3.2800, 1e-4, None)},
-        "permeate_conc_mol_comp": {
-            (0, 1, "Li"): (177.15, 1e-4, None),
-            (0, 1, "Co"): (92.576, 1e-4, None),
-            (0, 1, "Cl"): (362.30, 1e-4, None),
+        "permeate_outlet_flow": {(0): (3.2800, 1e-4, None)},
+        "permeate_outlet_conc_mol_comp": {
+            (0, "Li"): (135.05, 1e-4, None),
+            (0, "Co"): (65.776, 1e-4, None),
+            (0, "Cl"): (266.61, 1e-4, None),
         },
     }
 

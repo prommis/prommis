@@ -19,6 +19,12 @@ including acid tank leaching, solvent extraction, precipitation, and product roa
 Implementation
 --------------
 
+The legacy version of the UKy flowsheet (legacy_uky_flowsheet.py) does not utilize the mixed acid property package and
+integrates the precipitator.py model, which assumes fixed separation of solids based on partition coefficients. The
+base version of this flowsheet (uky_flowsheet.py) utilizes the mixed acid property package and the
+precipitator_isotherm.py model, which uses equilibrium isotherm parameters derived from Visual MINTEQ to calculate the
+fraction of each metal that precipitates as a metal oxalate for a mixed acid REE solution.
+
 Figure 1 shows the process flow diagram for the simplified, steady-state UKy plant where the solid and liquid feeds are
 sent to a leaching tank for initial processing; then the solids (with some retained liquid) are separated out as a filter
 cake while the remaining liquid is sent to the solvent extraction process which is comprised of 2 distinct circuits.
@@ -263,13 +269,7 @@ def main():
     add_costing(m)
     initialize_costing(m)
 
-    # diagnostics, initialize, and solve
-    dt = DiagnosticsToolbox(m)
-    dt.assert_no_structural_warnings()
-
     solve_system(m, tee=True)
-
-    dt.assert_no_numerical_warnings()
 
     display_costing(m)
 

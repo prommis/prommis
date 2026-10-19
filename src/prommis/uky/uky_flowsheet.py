@@ -197,7 +197,7 @@ from idaes.models_extra.power_generation.properties.natural_gas_PR import (
     get_prop,
 )
 
-from prommis.leaching.mixed_acid_leach_reactions import MixedAcidLeachingReactionParameterBlock
+from prommis.leaching.leach_reactions import CoalRefuseLeachingReactionParameterBlock
 from prommis.leaching.leach_train import LeachingTrain, LeachingTrainInitializer
 from prommis.precipitate.precipitate_solids_properties import PrecipitateParameters
 from prommis.precipitate.precipitator import Precipitator
@@ -207,18 +207,19 @@ from prommis.properties.translator_sx_to_leach import TranslatorSXLeach
 from prommis.properties.translator_sx_to_precip import TranslatorSXPrecip
 from prommis.properties.translator_precip_to_sx import TranslatorPrecipSX
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
-from prommis.solvent_extraction.mixed_acid_solvent_extraction import (
-    MixedAcidSolventExtraction,
-    MixedAcidSolventExtractionInitializer,
+from prommis.solvent_extraction.solvent_extraction import (
+    SolventExtraction,
+    SolventExtractionInitializer,
 )
-from prommis.solvent_extraction.mixed_acid_solvent_extraction_reaction_package import (
-    MixedAcidSolventExtractionReactions,
+from prommis.solvent_extraction.solvent_extraction_reaction_package import (
+    SolventExtractionReactions,
 )
 from prommis.uky.costing.costing_dictionaries import load_REE_costing_dictionary
 from prommis.uky.costing.ree_plant_capcost import QGESSCosting, QGESSCostingData
 
 from prommis.properties.mixed_acid_properties import (
     MixedAcidParameterBlock,
+    get_aliases,
 )
 
 _log = idaeslog.getLogger(__name__)
@@ -306,7 +307,11 @@ def build():
 
     # Leaching property and unit models
     m.fs.coal = CoalRefuseParameters()
-    m.fs.leach_rxns = MixedAcidLeachingReactionParameterBlock()
+    #TODO: Double check
+    #TODO: Need to make it so that include sulfates and include oxalates are both required or optional
+    m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock(
+        aqueous_aliases=get_aliases(include_sulfates=True)
+    )
 
     m.fs.leach = LeachingTrain(
         number_of_tanks=2,
@@ -354,11 +359,13 @@ def build():
     # ----------------------------------------------------------------------------------------------------------------
     # Solvent extraction property, reaction and unit models
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.reaxn = MixedAcidSolventExtractionReactions()
+    m.fs.reaxn = SolventExtractionReactions(
+        aqueous_aliases=get_aliases()
+    )
 
     m.fs.rougher_org_make_up = Feed(property_package=m.fs.prop_o)
 
-    m.fs.solex_rougher_load = MixedAcidSolventExtraction(
+    m.fs.solex_rougher_load = SolventExtraction(
         number_of_finite_elements=3,
         dynamic=False,
         aqueous_stream={
@@ -380,7 +387,7 @@ def build():
 
     m.fs.acid_feed1 = Feed(property_package=m.fs.sx_soln)
 
-    m.fs.solex_rougher_scrub = MixedAcidSolventExtraction(
+    m.fs.solex_rougher_scrub = SolventExtraction(
         number_of_finite_elements=1,
         dynamic=False,
         aqueous_stream={
@@ -402,7 +409,7 @@ def build():
 
     m.fs.acid_feed2 = Feed(property_package=m.fs.sx_soln)
 
-    m.fs.solex_rougher_strip = MixedAcidSolventExtraction(
+    m.fs.solex_rougher_strip = SolventExtraction(
         number_of_finite_elements=2,
         dynamic=False,
         aqueous_stream={
@@ -458,7 +465,7 @@ def build():
 
     m.fs.rougher_organic_purge = Product(property_package=m.fs.prop_o)
 
-    m.fs.solex_cleaner_load = MixedAcidSolventExtraction(
+    m.fs.solex_cleaner_load = SolventExtraction(
         number_of_finite_elements=3,
         dynamic=False,
         aqueous_stream={
@@ -478,7 +485,7 @@ def build():
         create_hydrostatic_pressure_terms=False,
     )
 
-    m.fs.solex_cleaner_strip = MixedAcidSolventExtraction(
+    m.fs.solex_cleaner_strip = SolventExtraction(
         number_of_finite_elements=3,
         dynamic=False,
         aqueous_stream={
@@ -550,7 +557,9 @@ def build():
     # --------------------------------------------------------------------------------------------------------------
     # Precipitation property, reaction, and unit models
 
-    m.fs.properties_solid = PrecipitateParameters()
+    m.fs.properties_solid = PrecipitateParameters(
+        aqueous_aliases=get_aliases(include_oxalates=True)
+    )
 
     m.fs.precipitator = Precipitator(
         property_package_aqueous=m.fs.precip_soln,
@@ -594,15 +603,6 @@ def build():
         doc="gas property",
     )
 
-    #TODO: Check whether this or the regular roaster should be used
-    # m.fs.roaster = MixedAcidREEOxalateRoaster(
-    #     property_package_gas=m.fs.prop_gas,
-    #     property_package_precipitate_solid=m.fs.properties_solid,
-    #     property_package_precipitate_liquid=m.fs.precip_soln,
-    #     has_holdup=False,
-    #     has_heat_transfer=True,
-    #     has_pressure_change=True,
-    # )
     m.fs.roaster = REEOxalateRoaster(
         property_package_gas=m.fs.prop_gas,
         property_package_precipitate_solid=m.fs.properties_solid,
@@ -1270,7 +1270,7 @@ def initialize_system(m):
         # m.fs.leach,
     ]
 
-    initializer_sx = MixedAcidSolventExtractionInitializer()
+    initializer_sx = SolventExtractionInitializer()
     sx_units = [
         m.fs.solex_rougher_load,
         m.fs.solex_rougher_scrub,

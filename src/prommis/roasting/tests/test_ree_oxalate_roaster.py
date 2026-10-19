@@ -610,10 +610,12 @@ def test_solution_gas_fired(model_gas_fired):
         "Gd": 0.11746492711281438,
         "Dy": 0.12086738764265201,
     }
+
     for i in model_gas_fired.fs.roaster.metal_list:
-        assert value(
-            model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]
-        ) == pytest.approx(mass_frac_comp_product[i], rel=1e-5, abs=1e-6)
+        base_metal = model_gas_fired.fs.roaster.base_metal[i]
+        assert value(model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
+            mass_frac_comp_product[base_metal], rel=1e-5, abs=1e-6
+        )
 
 
 @pytest.mark.parametrize(
@@ -706,18 +708,22 @@ class Test_REE_Oxalate_Roaster_model:
         assert_units_consistent(m.fs.roaster)
 
         # The oxalate feed of each metal must come from the matching solid
+        solid_props = m.fs.roaster.config.property_package_precipitate_solid
+        reversed_react = dict(map(reversed, solid_props.react.items()))
         for i in m.fs.roaster.metal_list:
-            if i == "Ca":
-                solid = "Ca(C2O4)(s)"
-            else:
-                solid = f"{i}2(C2O4)3(s)"
+            solid = reversed_react[i]
+
             feed_vars = {
                 v.name
                 for v in identify_variables(
                     m.fs.roaster.flow_mol_comp_feed_eqn[0, i].body
                 )
             }
-            assert m.fs.roaster.solid_in[0].flow_mol_comp[solid].name in feed_vars
+
+            assert (
+                    m.fs.roaster.solid_in[0].flow_mol_comp[solid].name
+                    in feed_vars
+            )
             assert m.fs.roaster.flow_mol_comp_feed[0, i].name in feed_vars
 
     @pytest.mark.unit
@@ -771,7 +777,13 @@ class Test_REE_Oxalate_Roaster_model:
             "Gd": 0.11746492711281438,
             "Dy": 0.12086738764265201,
         }
+        # for i in m.fs.roaster.metal_list:
+        #     assert value(m.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
+        #         mass_frac_comp_product[i], rel=1e-5, abs=1e-6
+        #     )
+
         for i in m.fs.roaster.metal_list:
+            base_metal = m.fs.roaster.base_metal[i]
             assert value(m.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-                mass_frac_comp_product[i], rel=1e-5, abs=1e-6
+                mass_frac_comp_product[base_metal], rel=1e-5, abs=1e-6
             )

@@ -17,6 +17,9 @@ __author__ = "Daison Yancy Caballero"
 
 import math
 
+# A small step between size edges can create too many intervals.
+_MAX_GEOMETRIC_INTERVALS = 1000
+
 
 def _finite_float(value, what):
     """Return ``value`` as a finite float, rejecting booleans and overflow."""
@@ -127,7 +130,8 @@ def geometric_series(top, bottom, ratio):
     Raises:
         ValueError: if ``top``, ``bottom``, or ``ratio`` is a boolean, non-finite,
             or an int too large to represent as a float; if ``0 < bottom < top``
-            is not satisfied; or if ``ratio <= 1``.
+            is not satisfied; if ``ratio <= 1``; or if
+            ``ln(top/bottom)/ln(ratio)`` exceeds 1000.
     """
     top = _finite_float(top, "geometric_series top")
     bottom = _finite_float(bottom, "geometric_series bottom")
@@ -136,7 +140,13 @@ def geometric_series(top, bottom, ratio):
         raise ValueError("require 0 < bottom < top")
     if not ratio > 1.0:
         raise ValueError("ratio must be > 1")
-    n_intervals = max(int(round(math.log(top / bottom) / math.log(ratio))), 1)
+    n_float = math.log(top / bottom) / math.log(ratio)
+    if n_float > _MAX_GEOMETRIC_INTERVALS:
+        raise ValueError(
+            f"ratio {ratio} would create about {n_float:.3g} intervals; the "
+            f"maximum is {_MAX_GEOMETRIC_INTERVALS}. Use a larger ratio."
+        )
+    n_intervals = max(int(round(n_float)), 1)
     exact_ratio = (top / bottom) ** (1.0 / n_intervals)
     edges = [bottom * exact_ratio**i for i in range(n_intervals + 1)]
     edges[0] = bottom

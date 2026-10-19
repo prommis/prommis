@@ -23,10 +23,10 @@ State variables
 =================================== ====== ==================================================
 Name                                Units  Meaning and basis
 =================================== ====== ==================================================
-``flow_mass_sized_comp_size[s, k]`` kg/s   State: retained mass flow of sized solid ``s`` in
-                                           interval ``k``.
-``flow_mass_unsized_comp[u]``       kg/s   State: mass flow of unsized solid ``u``, when
-                                           configured.
+``flow_mass_sized_comp_size[s, k]`` kg/s   State: mass flow of sized solid component ``s`` in
+                                           size interval ``k``.
+``flow_mass_unsized_comp[u]``       kg/s   State: mass flow of unsized solid component
+                                           ``u``, when configured.
 ``flow_mass_liquid_comp[j]``        kg/s   State: mass flow of liquid component ``j``.
 ``flow_mass_vapor_comp[v]``         kg/s   State: mass flow of vapor component ``v``, when
                                            configured.
@@ -42,7 +42,8 @@ Name                                Units  Meaning and basis
 =================================== ====== ==================================================
 ``size_edges[k]``                   m      Parameter: interval boundaries; ``N+1`` edges for
                                            ``N`` intervals.
-``size_char[k]``                    m      Parameter: geometric-mean interval size; uses
+``size_char[k]``                    m      Parameter: characteristic size of interval ``k``,
+                                           the geometric mean of its edges; uses
                                            ``bottom_size`` for a zero finest edge.
 ``dens_mass_solid_comp[j]``         kg/m^3 Parameter: configured density of sized or unsized
                                            solid ``j``.
@@ -51,28 +52,33 @@ Name                                Units  Meaning and basis
 ``flow_mass_phase[p]``              kg/s   Total phase flow; ``Sol`` includes sized and
                                            unsized solids, ``Liq`` all liquids, and optional
                                            ``Vap`` all vapors.
-``flow_mass_sized_comp[s]``         kg/s   Flow of sized solid ``s``, summed over its
-                                           intervals.
-``flow_mass_solid_comp[j]``         kg/s   Flow of solid ``j``, whether sized or unsized.
-``flow_mass_size[k]``               kg/s   Retained flow in interval ``k``, summed over sized
-                                           solids.
+``flow_mass_sized_comp[s]``         kg/s   Flow of sized solid component ``s``, summed over
+                                           all size intervals.
+``flow_mass_solid_comp[j]``         kg/s   Flow of solid component ``j``, sized or unsized.
+``flow_mass_size[k]``               kg/s   Mass flow in size interval ``k``, summed over all
+                                           sized solid components.
 ``flow_mass_sized``                 kg/s   Total sized-solids flow; excludes unsized solids.
-``mass_frac_solid_comp[j]``         –      Composition of solid ``j`` on a total-solids mass
-                                           basis.
-``mass_frac_size[k]``               –      Retained fraction in interval ``k`` on a
-                                           sized-solids mass basis.
-``mass_frac_size_comp[s, k]``       –      Fraction of sized solid ``s`` retained in interval
-                                           ``k``; its PSD.
-``mass_frac_comp_size[s, k]``       –      Component composition within interval ``k`` on a
-                                           sized-solids basis.
-``cum_passing_size[k]``             –      Sized-solids mass fraction passing the upper edge
-                                           of interval ``k``.
-``cum_passing_comp_size[s, k]``     –      Mass fraction of sized solid ``s`` passing that
-                                           upper edge.
-``percentile_size[q]``              m      Smooth size at passing fraction ``q`` for all
-                                           sized solids.
-``percentile_size_comp[s, q]``      m      Smooth size at passing fraction ``q`` for sized
-                                           solid ``s``.
+``mass_frac_solid_comp[j]``         –      Mass fraction of solid component ``j``, sized or
+                                           unsized, on a total-solids basis.
+``mass_frac_size[k]``               –      Mass fraction of sized solids in size interval
+                                           ``k``, on a total sized-solids basis.
+``mass_frac_size_comp[s, k]``       –      Mass fraction of sized solid component ``s`` in
+                                           size interval ``k``; basis: total flow of ``s``
+                                           over all intervals, the PSD of ``s``.
+``mass_frac_comp_size[s, k]``       –      Mass fraction of sized solid component ``s`` in
+                                           size interval ``k``; basis: total sized-solids
+                                           flow in interval ``k``, the composition of the
+                                           bin.
+``cum_passing_size[k]``             –      Mass fraction of all sized solids passing the
+                                           upper edge of size interval ``k``; basis: total
+                                           sized-solids flow.
+``cum_passing_comp_size[s, k]``     –      Mass fraction of sized solid component ``s``
+                                           passing the upper edge of size interval ``k``;
+                                           basis: total flow of ``s`` over all intervals.
+``percentile_size[q]``              m      Smooth size at passing fraction ``q`` of the PSD
+                                           of all sized solids; excludes unsized solids.
+``percentile_size_comp[s, q]``      m      Smooth size at passing fraction ``q`` of the PSD
+                                           of sized solid component ``s`` only.
 ``flow_vol_solid``                  m^3/s  Sum of each sized and unsized solid's mass flow
                                            divided by its density.
 ``flow_vol_liquid``                 m^3/s  Sum of each liquid component's mass flow divided
@@ -82,23 +88,27 @@ Name                                Units  Meaning and basis
                                            slurry.
 ``dens_mass_solid``                 kg/m^3 Total solids mass flow divided by total solids
                                            volume flow.
-``dens_mass_solid_mass_weighted``   kg/m^3 Sum of each solid's mass flow times density
-                                           divided by total solids mass flow; differs from
-                                           ``dens_mass_solid``.
+``dens_mass_solid_mass_weighted``   kg/m^3 Sum of each solid component's mass flow times
+                                           density divided by total solids mass flow;
+                                           differs from ``dens_mass_solid``.
 ``dens_mass_slurry``                kg/m^3 Solid plus liquid mass flow divided by slurry
                                            volume flow; excludes vapor.
 =================================== ====== ==================================================
 
 Mass fractions are calculated from component flows, without a separate
 constraint forcing them to sum to one. Unit models supply the full
-component-by-size flow balances. Retained mass fractions, per-component PSD
-properties, and ``dens_mass_solid_mass_weighted`` are built when first accessed.
+component-by-size flow balances. The ``mass_frac_*`` properties,
+``cum_passing_comp_size``, ``percentile_size_comp``, and
+``dens_mass_solid_mass_weighted`` are built when first accessed.
 
 Small fixed terms in mass and volume flow denominators keep ratios finite at
 zero flow, but can bias them near zero. Percentiles have no physical meaning
 when the selected PSD contains no sized solids. ``validate_feed`` accepts
 water-only feeds but requires finite, nonnegative flows, positive finite
 temperature and pressure, and positive finite total flow across all phases.
+For a dry stream, set all liquid component flows to zero. The slurry density
+and solid volume fraction then use only solid material; interparticle gas is
+excluded.
 For reporting, ``percentile_size_report`` sets ``size_m`` only when the selected
 PSD contains sized solids and the smooth percentile agrees with linear bin
 interpolation within ``rel_tol``.
@@ -142,6 +152,7 @@ from idaes.core.util.math import smooth_min
 from prommis.comminution.core import size_mesh
 from prommis.comminution.core.config_utils import _cfg_float, _is_real_number
 from prommis.comminution.core.psd_math import (
+    P80_PASSING,
     cumulative_passing,
     size_at_passing as size_at_passing_numeric,
     size_at_passing_smooth,
@@ -341,7 +352,7 @@ class SolidPSDParameterData(PhysicalParameterBlock):
         - ``vapor_component_list``: default empty; when empty no vapor state exists.
         - ``percentile_targets``: passing fractions for the indexed percentile
           properties; defaults to ``(0.8,)``. The 80% passing size is always
-          included.
+          included, and the package sorts the targets in ascending order.
 
     Use one parameter block instance across connected units to keep components,
     densities, and bottom-size definitions consistent. ``assert_same_mesh``
@@ -419,9 +430,10 @@ class SolidPSDParameterData(PhysicalParameterBlock):
     CONFIG.declare(
         "percentile_targets",
         ConfigValue(
-            default=(0.8,),
+            default=(P80_PASSING,),
             description="Non-empty passing fractions in (0, 1] for indexed "
-            "size properties; 0.8 is always included (default: (0.8,)).",
+            "size properties, sorted in ascending order; 0.8 is always "
+            "included (default: (0.8,)).",
         ),
     )
 
@@ -574,7 +586,9 @@ class SolidPSDParameterData(PhysicalParameterBlock):
         """Characteristic interval sizes in meters as floats, as built."""
         return self._size_char_values
 
-    def size_at_passing_from_flows(self, size_bin_flows, target=0.8, eps=EPS_SMOOTH):
+    def size_at_passing_from_flows(
+        self, size_bin_flows, target=P80_PASSING, eps=EPS_SMOOTH
+    ):
         """Compute a smooth passing size from proposed size-bin mass flows (m).
 
         ``size_bin_flows`` maps each label to ``N`` kg/s flows, one per size
@@ -704,7 +718,7 @@ class SolidPSDStateBlockData(StateBlockData):
             bounds=(0, None),
             initialize=1e-3,
             units=units.kg / units.s,
-            doc="Retained mass flow per sized solid component and size interval (kg/s).",
+            doc="Mass flow per sized solid component and size interval (kg/s).",
         )
         if unsized:
             self.flow_mass_unsized_comp = Var(
@@ -773,7 +787,8 @@ class SolidPSDStateBlockData(StateBlockData):
             return b.flow_mass_unsized_comp[j]
 
         @self.Expression(
-            sset, doc="Retained mass flow per interval, sized solids (kg/s)."
+            sset,
+            doc="Mass flow in each size interval, summed over sized solids (kg/s).",
         )
         def flow_mass_size(b, k):
             return sum(b.flow_mass_sized_comp_size[s, k] for s in sized)
@@ -839,13 +854,13 @@ class SolidPSDStateBlockData(StateBlockData):
 
     # Build-on-demand properties
     def _mass_frac_size_comp(self):
-        """Construct retained size fractions for each sized solid component."""
+        """Construct size-interval mass fractions for each sized solid component."""
         p = self.params
 
         @self.Expression(
             p.sized_solid_list,
             p.size_interval_set,
-            doc="Fraction of each sized solid component's mass flow retained in an interval.",
+            doc="Fraction of each sized solid component's mass flow in an interval.",
         )
         def mass_frac_size_comp(b, s, k):
             return b.flow_mass_sized_comp_size[s, k] / (
@@ -895,11 +910,11 @@ class SolidPSDStateBlockData(StateBlockData):
             )
 
     def _mass_frac_size(self):
-        """Construct retained size fractions on a sized-solids basis."""
+        """Construct size-interval mass fractions on a sized-solids basis."""
 
         @self.Expression(
             self.params.size_interval_set,
-            doc="Fraction of sized-solids mass flow retained in an interval.",
+            doc="Fraction of sized-solids mass flow in a size interval.",
         )
         def mass_frac_size(b, k):
             return b.flow_mass_size[k] / (b.flow_mass_sized + MASS_FLOW_EPS)
@@ -1099,7 +1114,7 @@ def _attainable_passing_target(target, top_passing):
 
 
 def _validate_percentile_targets(cfg_targets):
-    """Return validated passing fractions, appending 0.8 if absent."""
+    """Return validated passing fractions in ascending order, adding 0.8 if absent."""
     if not isinstance(cfg_targets, (list, tuple)) or not cfg_targets:
         raise ConfigurationError(
             "percentile_targets must be a non-empty list or tuple."
@@ -1110,9 +1125,9 @@ def _validate_percentile_targets(cfg_targets):
     )
     if len(set(targets)) != len(targets):
         raise ConfigurationError("percentile_targets must not contain duplicates.")
-    if 0.8 not in targets:
-        targets += (0.8,)
-    return targets
+    if P80_PASSING not in targets:
+        targets += (P80_PASSING,)
+    return tuple(sorted(targets))
 
 
 def _validated_name_tuple(raw_names, option_name, *, allow_empty):

@@ -57,6 +57,13 @@ def test_size_at_passing_hand_values():
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("target", [0.0, 1.5, float("nan")])
+def test_size_at_passing_rejects_targets_outside_unit_interval(target):
+    with pytest.raises(ValueError, match="passing target must lie in"):
+        size_at_passing(HANDCALC_EDGES, HANDCALC_CUM, target)
+
+
+@pytest.mark.unit
 def test_size_at_passing_smooth_is_finite_on_step_curve():
     # Empty bins create flat sections that can cause division by zero.
     cum = cumulative_passing([0.0, 10.0, 0.0, 0.0])

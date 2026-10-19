@@ -114,6 +114,9 @@ def test_inverse_sum_of_nominals_sums_and_floors():
     assert inverse_magnitude_factor(0.0, 0.5) == 2.0
     assert inverse_magnitude_factor(-4.0, 1.0) == 0.25
     assert inverse_magnitude_factor(1e-9, 1e-6) == pytest.approx(1e6, rel=1e-12)
+    for reference_value in (float("nan"), float("inf")):
+        with pytest.raises(ConfigurationError, match="must be finite"):
+            inverse_magnitude_factor(reference_value, 1.0)
     # Every variable in a source group must have a positive scaling factor.
     m = _two_block_model()
     set_scaling_factor(m.src.x["a"], 0.5)

@@ -12,6 +12,7 @@ import pytest
 
 from prommis.comminution.core.size_mesh import (
     characteristic_sizes,
+    geometric_series,
     validate_mesh,
 )
 
@@ -84,3 +85,22 @@ def test_characteristic_sizes_handcalc():
     assert d_char[1] == pytest.approx(math.sqrt(1.3 * 2.6), rel=1e-12)
     with pytest.raises(ValueError, match="finest edge x_0 must be > 0"):
         characteristic_sizes([0.0, 1.3, 2.6])
+
+
+@pytest.mark.unit
+def test_geometric_series():
+    assert geometric_series(16.0, 1.0, 2.0) == (1.0, 2.0, 4.0, 8.0, 16.0)
+    # Adjust the requested multiplier to reach the top edge in seven equal steps.
+    edges = geometric_series(16.0, 1.0, 1.5)
+    assert len(edges) == 8
+    assert (edges[0], edges[-1]) == (1.0, 16.0)
+    for lo, hi in zip(edges, edges[1:]):
+        assert hi / lo == pytest.approx(16.0 ** (1.0 / 7.0), rel=1e-12)
+
+    with pytest.raises(ValueError, match="require 0 < bottom < top"):
+        geometric_series(1.0, 1.0, 2.0)
+    with pytest.raises(ValueError, match="ratio must be > 1"):
+        geometric_series(16.0, 1.0, 1.0)
+    # Increasing each edge by only 0.01% would require about 92,000 intervals.
+    with pytest.raises(ValueError, match=r"would create about 9\.21e\+04 intervals"):
+        geometric_series(1e-1, 1e-5, 1.0001)

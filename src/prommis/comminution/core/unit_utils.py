@@ -8,6 +8,8 @@
 
 __author__ = "Daison Yancy Caballero"
 
+import math
+
 from pyomo.common.collections import ComponentMap
 from pyomo.common.config import ConfigValue, In
 from pyomo.environ import units, value
@@ -194,4 +196,9 @@ def inverse_magnitude_factor(reference_value, floor):
     Treat ``None`` and zero as zero; callers may supply either a current value
     or an input-based estimate.
     """
-    return 1.0 / max(abs(reference_value or 0.0), floor)
+    magnitude = abs(reference_value or 0.0)
+    if not math.isfinite(magnitude):
+        raise ConfigurationError(
+            f"reference value must be finite (got {reference_value!r})."
+        )
+    return 1.0 / max(magnitude, floor)

@@ -381,11 +381,11 @@ def test_hand_calc_aggregates():
 
 @pytest.mark.unit
 def test_configured_percentile_sizes():
-    m, b = _state(percentile_targets=(0.5, 0.9))
+    m, b = _state(percentile_targets=(0.9, 0.5))
     _fix_hand_calc(b)
 
-    assert list(m.params.percentile_targets) == [0.5, 0.9, 0.8]
-    assert list(b.percentile_size) == [0.5, 0.9, 0.8]
+    assert list(m.params.percentile_targets) == [0.5, 0.8, 0.9]
+    assert list(b.percentile_size) == [0.5, 0.8, 0.9]
     assert value(units.convert(b.percentile_size[0.5], units.mm)) == pytest.approx(
         4.0, rel=1e-3
     )

@@ -9,8 +9,11 @@
 Conventions used by these helpers:
 
 * **Ascending size order, retained-mass basis.**  A mesh of ``N+1`` strictly
-  increasing edges ``x_0 < x_1 < ... < x_N`` defines ``N`` intervals; interval
-  ``k`` holds particles in ``[x_k, x_{k+1})`` and ``k = 0`` is the finest bin.
+  increasing edges ``x_0 < x_1 < ... < x_N`` defines ``N`` intervals.
+  Interval ``k >= 1`` holds particles in ``[x_k, x_{k+1})``. The finest
+  interval, ``k = 0``, holds all particles below ``x_1``, including any
+  below ``x_0``. Here, "retained" means assigned to a size interval
+  (sieve-analysis terminology), not held in equipment.
 * The PSD is stored as **retained mass flow per interval**; fractions and
   cumulative passing are derived.  Cumulative passing is evaluated at the
   interval upper edges: ``cum[k] = sum_{i<=k} w_i / sum_i w_i``.
@@ -87,9 +90,9 @@ def size_at_passing(edges, cum, target):
         the interpolated size at the requested passing fraction.
 
     Raises:
-        ValueError: on an inconsistent mesh length (``len(edges) != len(cum)+1``)
-            or fewer than one interval, an out-of-domain ``target`` (``<= 0`` or
-            ``> 1``), or if no interval brackets ``target``.
+        ValueError: If ``edges`` does not have ``len(cum) + 1`` entries or the
+            mesh has no intervals, ``target`` is not in ``(0, 1]`` (including
+            ``nan``), or the cumulative values do not bracket ``target``.
     """
     edges = _as_floats(edges)
     cum = _as_floats(cum)
@@ -98,7 +101,7 @@ def size_at_passing(edges, cum, target):
         raise ValueError("edges must have exactly len(cum)+1 entries")
     if n < 1:
         raise ValueError("need at least one interval")
-    if target <= 0.0 or target > 1.0:
+    if not 0.0 < target <= 1.0:
         raise ValueError(f"passing target must lie in (0, 1]; got {target}")
     aug = [0.0] + cum
     for m in range(n):

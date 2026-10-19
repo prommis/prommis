@@ -1565,12 +1565,6 @@ def add_result_expressions(m):
         "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
     }
 
-    print("Roaster product-flow indices:")
-    print(list(m.fs.roaster.flow_mol_comp_product.index_set()))
-
-    print("Metal set:")
-    print(list(m.fs.metal_set))
-
     @fs.Expression(
         fs.time,
         fs.metal_set,
@@ -3125,3 +3119,6 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
+
+    #TODO: The flowsheet is working wih get_aliases, but there's a bug with the roaster unit model
+    # Need to use Claude to fix the unit model, then I need to carry over those changes to the roaster PR & update tests

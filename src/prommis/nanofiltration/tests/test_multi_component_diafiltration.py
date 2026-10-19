@@ -13,6 +13,7 @@ Author: Molly Dougher
 from pyomo.environ import (
     ConcreteModel,
     Constraint,
+    Expression,
     Param,
     Set,
     SolverFactory,
@@ -39,7 +40,7 @@ from prommis.nanofiltration.multi_component_diafiltration import (
     MultiComponentDiafiltration,
 )
 
-# TODO: test positive and neutral membrane cases
+# TODO: test positive and neutral membrane cases (low priority)
 
 
 ################################################################################
@@ -407,6 +408,32 @@ def test_build(diafiltration_model):
         assert isinstance(membrane.permeate_outlet, Port)
         assert len(membrane.permeate_outlet.flow_vol) == 1
 
+        # expressions
+        assert isinstance(membrane.permeate_outlet_flow, Expression)
+        assert len(membrane.permeate_outlet_flow) == 1
+
+        assert isinstance(membrane.feed_ionic_strength, Expression)
+        assert len(membrane.feed_ionic_strength) == 1
+
+        assert isinstance(membrane.total_feed_flow_volume, Expression)
+        assert len(membrane.total_feed_flow_volume) == 1
+
+        assert isinstance(membrane.membrane_electric_potential_gradient, Expression)
+        assert len(membrane.membrane_electric_potential_gradient) == 110
+
+        # dependent on number of solutes
+        assert isinstance(membrane.permeate_outlet_conc_mol_comp, Expression)
+        assert isinstance(membrane.total_feed_conc_mol_comp, Expression)
+        assert isinstance(membrane.local_partition_coefficient_feed_side, Expression)
+        assert isinstance(membrane.local_partition_coefficient_permeate_side, Expression)
+        assert isinstance(membrane.local_observed_rejection_percent, Expression)
+        assert isinstance(membrane.overall_observed_rejection_percent, Expression)
+        assert isinstance(membrane.local_observed_sieving_coefficient, Expression)
+        assert isinstance(membrane.overall_observed_sieving_coefficient, Expression)
+        assert isinstance(membrane.membrane_convective_flux, Expression)
+        assert isinstance(membrane.membrane_diffusive_flux, Expression)
+        assert isinstance(membrane.membrane_electromigrative_flux, Expression)
+
     def _test_build_boundary_layer(membrane):
         # parameters
         assert isinstance(membrane.total_boundary_layer_thickness, Param)
@@ -480,6 +507,17 @@ def test_build(diafiltration_model):
             == 1e-2
         )
 
+        # expressions
+        assert isinstance(membrane.boundary_layer_electric_potential_gradient, Expression)
+        assert len(membrane.boundary_layer_electric_potential_gradient) == 110
+
+        # dependent on number of solutes
+        assert isinstance(membrane.local_actual_rejection_percent, Expression)
+        assert isinstance(membrane.local_actual_sieving_coefficient, Expression)
+        assert isinstance(membrane.boundary_layer_convective_flux, Expression)
+        assert isinstance(membrane.boundary_layer_diffusive_flux, Expression)
+        assert isinstance(membrane.boundary_layer_electromigrative_flux, Expression)
+
     def _test_build_single_salt(membrane):
         # sets
         assert len(membrane.solutes) == 2
@@ -524,6 +562,19 @@ def test_build(diafiltration_model):
         assert len(membrane.retentate_outlet.conc_mol_comp) == 2
         assert len(membrane.permeate_outlet.conc_mol_comp) == 2
 
+        # expressions
+        assert len(membrane.permeate_outlet_conc_mol_comp) == 2
+        assert len(membrane.total_feed_conc_mol_comp) == 2
+        assert len(membrane.local_partition_coefficient_feed_side) == 22
+        assert len(membrane.local_partition_coefficient_permeate_side) == 22
+        assert len(membrane.local_observed_rejection_percent) == 22
+        assert len(membrane.overall_observed_rejection_percent) == 2
+        assert len(membrane.local_observed_sieving_coefficient) == 22
+        assert len(membrane.overall_observed_sieving_coefficient) == 2
+        assert len(membrane.membrane_convective_flux) == 220
+        assert len(membrane.membrane_diffusive_flux) == 220
+        assert len(membrane.membrane_electromigrative_flux) == 220
+
     def _test_build_single_salt_boundary_layer(membrane):
         # variables
         assert len(membrane.boundary_layer_cross_diffusion_coefficient_bilinear) == 121
@@ -545,6 +596,13 @@ def test_build(diafiltration_model):
         )
         assert len(membrane.cation_flux_boundary_layer) == 100
         assert len(membrane.boundary_layer_conc_mol_comp_boundary_condition) == 22
+
+        # expressions
+        assert len(membrane.local_actual_rejection_percent) == 22
+        assert len(membrane.local_actual_sieving_coefficient) == 22
+        assert len(membrane.boundary_layer_convective_flux) == 220
+        assert len(membrane.boundary_layer_diffusive_flux) == 220
+        assert len(membrane.boundary_layer_electromigrative_flux) == 220
 
     def _test_build_single_salt_no_boundary_layer(membrane):
         assert isinstance(membrane.retentate_membrane_interface, Constraint)
@@ -594,6 +652,19 @@ def test_build(diafiltration_model):
         assert len(membrane.retentate_outlet.conc_mol_comp) == 3
         assert len(membrane.permeate_outlet.conc_mol_comp) == 3
 
+        # expressions
+        assert len(membrane.permeate_outlet_conc_mol_comp) == 3
+        assert len(membrane.total_feed_conc_mol_comp) == 3
+        assert len(membrane.local_partition_coefficient_feed_side) == 33
+        assert len(membrane.local_partition_coefficient_permeate_side) == 33
+        assert len(membrane.local_observed_rejection_percent) == 33
+        assert len(membrane.overall_observed_rejection_percent) == 3
+        assert len(membrane.local_observed_sieving_coefficient) == 33
+        assert len(membrane.overall_observed_sieving_coefficient) == 3
+        assert len(membrane.membrane_convective_flux) == 330
+        assert len(membrane.membrane_diffusive_flux) == 330
+        assert len(membrane.membrane_electromigrative_flux) == 330
+
     def _test_build_two_salt_boundary_layer(membrane):
         # variables
         assert len(membrane.boundary_layer_cross_diffusion_coefficient_bilinear) == 484
@@ -615,6 +686,13 @@ def test_build(diafiltration_model):
         )
         assert len(membrane.cation_flux_boundary_layer) == 200
         assert len(membrane.boundary_layer_conc_mol_comp_boundary_condition) == 33
+
+        # expressions
+        assert len(membrane.local_actual_rejection_percent) == 33
+        assert len(membrane.local_actual_sieving_coefficient) == 33
+        assert len(membrane.boundary_layer_convective_flux) == 330
+        assert len(membrane.boundary_layer_diffusive_flux) == 330
+        assert len(membrane.boundary_layer_electromigrative_flux) == 330
 
     def _test_build_two_salt_no_boundary_layer(membrane):
         assert isinstance(membrane.retentate_membrane_interface, Constraint)
@@ -664,6 +742,19 @@ def test_build(diafiltration_model):
         assert len(membrane.retentate_outlet.conc_mol_comp) == 4
         assert len(membrane.permeate_outlet.conc_mol_comp) == 4
 
+        # expressions
+        assert len(membrane.permeate_outlet_conc_mol_comp) == 4
+        assert len(membrane.total_feed_conc_mol_comp) == 4
+        assert len(membrane.local_partition_coefficient_feed_side) == 44
+        assert len(membrane.local_partition_coefficient_permeate_side) == 44
+        assert len(membrane.local_observed_rejection_percent) == 44
+        assert len(membrane.overall_observed_rejection_percent) == 4
+        assert len(membrane.local_observed_sieving_coefficient) == 44
+        assert len(membrane.overall_observed_sieving_coefficient) == 4
+        assert len(membrane.membrane_convective_flux) == 440
+        assert len(membrane.membrane_diffusive_flux) == 440
+        assert len(membrane.membrane_electromigrative_flux) == 440
+
     def _test_build_three_salt_boundary_layer(membrane):
         # variables
         assert len(membrane.boundary_layer_cross_diffusion_coefficient_bilinear) == 1089
@@ -685,6 +776,13 @@ def test_build(diafiltration_model):
         )
         assert len(membrane.cation_flux_boundary_layer) == 300
         assert len(membrane.boundary_layer_conc_mol_comp_boundary_condition) == 44
+
+        # expressions
+        assert len(membrane.local_actual_rejection_percent) == 44
+        assert len(membrane.local_actual_sieving_coefficient) == 44
+        assert len(membrane.boundary_layer_convective_flux) == 440
+        assert len(membrane.boundary_layer_diffusive_flux) == 440
+        assert len(membrane.boundary_layer_electromigrative_flux) == 440
 
     def _test_build_three_salt_no_boundary_layer(membrane):
         assert isinstance(membrane.retentate_membrane_interface, Constraint)

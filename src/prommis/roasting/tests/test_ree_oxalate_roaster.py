@@ -774,10 +774,6 @@ class Test_REE_Oxalate_Roaster_model:
             "Gd": 0.11746492711281438,
             "Dy": 0.12086738764265201,
         }
-        # for i in m.fs.roaster.metal_list:
-        #     assert value(m.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-        #         mass_frac_comp_product[i], rel=1e-5, abs=1e-6
-        #     )
 
         for i in m.fs.roaster.metal_list:
             base_metal = m.fs.roaster.base_metal[i]

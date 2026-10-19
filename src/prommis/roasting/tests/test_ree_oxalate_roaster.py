@@ -613,9 +613,9 @@ def test_solution_gas_fired(model_gas_fired):
 
     for i in model_gas_fired.fs.roaster.metal_list:
         base_metal = model_gas_fired.fs.roaster.base_metal[i]
-        assert value(model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-            mass_frac_comp_product[base_metal], rel=1e-5, abs=1e-6
-        )
+        assert value(
+            model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]
+        ) == pytest.approx(mass_frac_comp_product[base_metal], rel=1e-5, abs=1e-6)
 
 
 @pytest.mark.parametrize(
@@ -720,10 +720,7 @@ class Test_REE_Oxalate_Roaster_model:
                 )
             }
 
-            assert (
-                    m.fs.roaster.solid_in[0].flow_mol_comp[solid].name
-                    in feed_vars
-            )
+            assert m.fs.roaster.solid_in[0].flow_mol_comp[solid].name in feed_vars
             assert m.fs.roaster.flow_mol_comp_feed[0, i].name in feed_vars
 
     @pytest.mark.unit

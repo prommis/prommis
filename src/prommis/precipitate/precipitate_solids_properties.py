@@ -24,8 +24,6 @@ from idaes.core import (
 )
 from idaes.core.util.initialization import fix_state_vars
 
-# Elements (as named in the older liquid property packages) that
-# each solid component is formed from
 _solid_to_element = {
     "Sc2(C2O4)3(s)": "Sc",
     "Y2(C2O4)3(s)": "Y",
@@ -85,13 +83,6 @@ class PrecipitateParametersData(PhysicalParameterBlock):
     * Rare Earth Oxalates: "Al2(C2O4)3(s)", "Fe2(C2O4)3(s)", "Sc2(C2O4)3(s)",
     "Y2(C2O4)3(s)", "La2(C2O4)3(s)", "Ce2(C2O4)3(s)", "Pr2(C2O4)3(s)",
     "Nd2(C2O4)3(s)", "Sm2(C2O4)3(s)", "Gd2(C2O4)3(s)", "Dy2(C2O4)3(s)"
-
-    The ``aqueous_aliases`` configuration option translates element names to
-    the names of the species in the aqueous stream (stored in ``react``). The
-    default uses the names from the older liquid property packages; to use
-    the MixedAcidParameterBlock, pass ``get_aliases(...)`` from
-    ``prommis.properties.mixed_acid_properties``.
-
     """
 
     CONFIG = PhysicalParameterBlock.CONFIG()
@@ -160,7 +151,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
                 "Dy2(C2O4)3(s)": 769.21 * 1e-3,
                 "Al2(C2O4)3(s)": 318.02 * 1e-3,
                 "Ca(C2O4)(s)": 128.097 * 1e-3,
-                "Fe2(C2O4)3(s)": 143.86 * 1e-3,
+                "Fe2(C2O4)3(s)": 375.75 * 1e-3,
             },
         )
 

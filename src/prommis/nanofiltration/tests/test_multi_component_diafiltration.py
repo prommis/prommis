@@ -740,6 +740,9 @@ def test_build(diafiltration_model):
         assert len(membrane.feed_conc_mol_comp_boundary_condition) == 3
         assert len(membrane.membrane_conc_mol_comp_boundary_condition) == 44
 
+        # scaling factors
+        assert membrane.scaling_factor[membrane.molar_ion_flux] == 1e2
+
         # ports
         assert len(membrane.feed_inlet.conc_mol_comp) == 4
         assert len(membrane.diafiltrate_inlet.conc_mol_comp) == 4
@@ -1174,7 +1177,7 @@ def test_solve(diafiltration_model):
         model_LiCoCl3_no_boundary_layer.fs.unit, LiCoCl3_no_boundary_layer_test_dict
     )
 
-    # TODO: For completeness, debug numerical issues in no boundary layer multi-salt solutions with Al
+    # TODO: For completeness, debug numerical issues in no boundary layer two-salt solutions with Al
     # +3 ions are almost 100% rejected, likely causing near-zero instabilities
     # This is low priority
 
@@ -1240,37 +1243,70 @@ def test_solve(diafiltration_model):
     }
     assert_solution_equivalent(model_CoAlCl5.fs.unit, CoAlCl5_test_dict)
 
-    # TODO: Debug numerical issues in three-salt solution
+    model_LiCoAlCl6 = diafiltration_model(
+        cation_list=["Li", "Co", "Al"],
+        anion_list=["Cl"],
+        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
+        inlet_concentration={
+            "feed": {"Li": 200, "Co": 200, "Al": 20, "Cl": 660},
+            "diafiltrate": {"Li": 14, "Co": 3, "Al": 3, "Cl": 29},
+        },
+        non_Donnan_partition_dict={"Li": 0.75, "Co": 0.4, "Al": 0.0001, "Cl": 0.05},
+        boundary_layer=True,
+    )
+    _test_diagnostics(model_LiCoAlCl6.fs.unit)
+    _test_solve(model_LiCoAlCl6)
+    _test_numerical_issues(model_LiCoAlCl6.fs.unit)
+    LiCoAlCl6_test_dict = {
+        "applied_pressure": {(0): (12.547, 1e-4, None)},
+        "retentate_flow_volume": {(0, 1): (12.970, 1e-4, None)},
+        "retentate_conc_mol_comp": {
+            (0, 1, "Li"): (161.36, 1e-4, None),
+            (0, 1, "Co"): (176.28, 1e-4, None),
+            (0, 1, "Al"): (20.247, 1e-4, None),
+            (0, 1, "Cl"): (574.66, 1e-4, None),
+        },
+        "permeate_outlet_flow": {(0): (3.2800, 1e-4, None)},
+        "permeate_outlet_conc_mol_comp": {
+            (0, "Li"): (140.55, 1e-4, None),
+            (0, "Co"): (70.752, 1e-4, None),
+            (0, "Al"): (0.0011973, 1e-4, None),
+            (0, "Cl"): (282.06, 1e-4, None),
+        },
+    }
+    assert_solution_equivalent(model_LiCoAlCl6.fs.unit, LiCoAlCl6_test_dict)
 
-    # model_LiCoAlCl6 = diafiltration_model(
-    #     cation_list=["Li", "Co", "Al"],
-    #     anion_list=["Cl"],
-    #     inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
-    #     inlet_concentration={
-    #         "feed": {"Li": 200, "Co": 200, "Al": 20, "Cl": 660},
-    #         "diafiltrate": {"Li": 14, "Co": 3, "Al": 3, "Cl": 29},
-    #     },
-    #     non_Donnan_partition_dict={"Li": 0.75, "Co": 0.4, "Al": 0.0001, "Cl": 0.05},
-    #     boundary_layer=True,
-    # )
-    # _test_diagnostics(model_LiCoAlCl6.fs.unit)
-    # _test_solve(model_LiCoAlCl6)
-    # _test_numerical_issues(model_LiCoAlCl6.fs.unit)
-    # LiCoAlCl6_test_dict = {
-    #     "applied_pressure": {(0): (, 1e-4, None)},
-    #     "retentate_flow_volume": {(0, 1): (12.970, 1e-4, None)},
-    #     "retentate_conc_mol_comp": {
-    #         (0, 1, "Li"): (, 1e-4, None),
-    #         (0, 1, "Co"): (, 1e-4, None),
-    #         (0, 1, "Al"): (, 1e-4, None),
-    #         (0, 1, "Cl"): (, 1e-4, None),
-    #     },
-    #     "permeate_flow_volume": {(0, 1): (3.2800, 1e-4, None)},
-    #     "permeate_conc_mol_comp": {
-    #         (0, 1, "Li"): (, 1e-4, None),
-    #         (0, 1, "Co"): (, 1e-4, None),
-    #         (0, 1, "Al"): (, 1e-4, None),
-    #         (0, 1, "Cl"): (, 1e-4, None),
-    #     },
-    # }
-    # assert_solution_equivalent(model_LiCoAlCl6.fs.unit, LiCoAlCl6_test_dict)
+    model_LiCoAlCl6_no_boundary_layer = diafiltration_model(
+        cation_list=["Li", "Co", "Al"],
+        anion_list=["Cl"],
+        inlet_flow_volume={"feed": 12.5, "diafiltrate": 3.75},
+        inlet_concentration={
+            "feed": {"Li": 200, "Co": 200, "Al": 20, "Cl": 660},
+            "diafiltrate": {"Li": 14, "Co": 3, "Al": 3, "Cl": 29},
+        },
+        non_Donnan_partition_dict={"Li": 0.75, "Co": 0.4, "Al": 0.0001, "Cl": 0.05},
+        boundary_layer=False,
+    )
+    _test_diagnostics(model_LiCoAlCl6_no_boundary_layer.fs.unit)
+    _test_solve(model_LiCoAlCl6_no_boundary_layer)
+    _test_numerical_issues(model_LiCoAlCl6_no_boundary_layer.fs.unit)
+    LiCoAlCl6_no_boundary_layer_test_dict = {
+        "applied_pressure": {(0): (12.052, 1e-4, None)},
+        "retentate_flow_volume": {(0, 1): (12.970, 1e-4, None)},
+        "retentate_conc_mol_comp": {
+            (0, 1, "Li"): (161.51, 1e-4, None),
+            (0, 1, "Co"): (177.42, 1e-4, None),
+            (0, 1, "Al"): (20.247, 1e-4, None),
+            (0, 1, "Cl"): (577.09, 1e-4, None),
+        },
+        "permeate_outlet_flow": {(0): (3.2800, 1e-4, None)},
+        "permeate_outlet_conc_mol_comp": {
+            (0, "Li"): (140.00, 1e-4, None),
+            (0, "Co"): (66.345, 1e-4, None),
+            (0, "Al"): (0.0010161, 1e-4, None),
+            (0, "Cl"): (272.70, 1e-4, None),
+        },
+    }
+    assert_solution_equivalent(
+        model_LiCoAlCl6_no_boundary_layer.fs.unit, LiCoAlCl6_no_boundary_layer_test_dict
+    )

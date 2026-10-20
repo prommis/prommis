@@ -1888,6 +1888,9 @@ and used when constructing these,
         self.scaling_factor[self.membrane_cross_diffusion_coefficient_calculation] = 1e5
         self.scaling_factor[self.membrane_convection_coefficient] = 1e3
 
+        if len(self.config.cation_list) >= 3:
+            self.scaling_factor[self.molar_ion_flux] = 1e2
+
     def add_ports(self):
         """
         Adds feed and product ports to the multi-component diafiltration unit model.

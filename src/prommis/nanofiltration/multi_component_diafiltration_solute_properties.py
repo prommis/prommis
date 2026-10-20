@@ -145,7 +145,7 @@ class MultiComponentDiafiltrationSoluteParameterData(PhysicalParameterBlock):
             "Co": 3,
             "Al": 4,
             "La": 4,
-            "Cl": None,
+            "Cl": 0,  # not called in the model
         }
 
         # create subset of property dictionaries to initialize parameters

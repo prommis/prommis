@@ -425,7 +425,9 @@ def test_build(diafiltration_model):
         assert isinstance(membrane.permeate_outlet_conc_mol_comp, Expression)
         assert isinstance(membrane.total_feed_conc_mol_comp, Expression)
         assert isinstance(membrane.local_partition_coefficient_feed_side, Expression)
-        assert isinstance(membrane.local_partition_coefficient_permeate_side, Expression)
+        assert isinstance(
+            membrane.local_partition_coefficient_permeate_side, Expression
+        )
         assert isinstance(membrane.local_observed_rejection_percent, Expression)
         assert isinstance(membrane.overall_observed_rejection_percent, Expression)
         assert isinstance(membrane.local_observed_sieving_coefficient, Expression)
@@ -508,7 +510,9 @@ def test_build(diafiltration_model):
         )
 
         # expressions
-        assert isinstance(membrane.boundary_layer_electric_potential_gradient, Expression)
+        assert isinstance(
+            membrane.boundary_layer_electric_potential_gradient, Expression
+        )
         assert len(membrane.boundary_layer_electric_potential_gradient) == 110
 
         # dependent on number of solutes

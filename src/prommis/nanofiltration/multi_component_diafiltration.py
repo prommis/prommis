@@ -10,14 +10,14 @@ Multi-Component Diafiltration Unit Model
 
 Author: Molly Dougher
 
-This membrane unit model is for the multi-component diafiltration of a multi-salt system with a common anion. The model can be built with or without the assumption of a boundary layer. Currently, the model and property packages support one, two, and three salt systems; however, the model can be extended to :math:`n` salts by supplying the appropriate properties and arguments (see below). The membrane is designed for use in a diafiltration cascade, i.e., the model represents one spiral-wound membrane module piece within a cascade of several membranes.
+This membrane unit model is for the multi-component diafiltration of a multi-salt system with a common anion. The model can be built with or without the assumption of a boundary layer. Currently, the model and property packages support one, two, and three salt systems; however, the model can be extended to :math:`n` salts by supplying the appropriate properties and arguments (see below). The membrane is designed for use in a diafiltration cascade, i.e., the model represents one spiral-wound membrane module within a stage of several membranes.
 
 Configuration Arguments
 -----------------------
 
-The Multi-Component Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), diffusion coefficients (:math:`D_{i,bl}` and :math:`D_{i,m}`) within the boundary layer and membrane, respectively, in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, thermodynamic reflection coefficient (:math:`\sigma_i`), partition coefficients (:math:`H_{i,r}` and :math:`H_{i,p}`) at the retentate-membrane and membrane-permeate interfaces, and number of dissolved species (:math:`n_i`) for each ion :math:`i` in solution. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
+The Multi-Component Diafiltration unit model requires a property package that provides the valency (:math:`z_i`), diffusion coefficients (:math:`D_{i,bl}` and :math:`D_{i,m}`) within the boundary layer and membrane, respectively, in :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`, thermodynamic reflection coefficient (:math:`\sigma_i`), and the number of dissolved species (:math:`n_k`) for each cation :math:`k` in a chloride salt solution. The user must provide the non-Donnan partitioning coefficient (:math:`\Phi_k=i`) of each ion :math:`i` when calling the property package. When used in a flowsheet, the user can provide separate property packages for the feed and product streams.
 
-There are six configuration arguments to create an instance of the Multi-Component Diafiltration Unit Model:
+There are seven configuration arguments to create an instance of the Multi-Component Diafiltration Unit Model:
 
 #. ``cation_list``: list of cations present in the system
 
@@ -31,30 +31,34 @@ There are six configuration arguments to create an instance of the Multi-Compone
 
     ``default=True``
 
+#. ``total_membrane_thickness``: Total membrane thickness in meters
+
+    ``default=1e-7``
+
 #. ``NFE_module_length``: the desired number of finite elements across the width of the membrane (i.e., the module length)
 
     ``default=10``
 
 #. ``NFE_boundary_layer_thickness``: the desired number of finite elements across the thickness of the boundary layer
 
-    ``default=5``
+    ``default=10``
 
 #. ``NFE_membrane_thickness``: the desired number of finite elements across the thickness of the membrane
 
-    ``default=5``
+    ``default=10``
 
 Degrees of Freedom
 ------------------
 
-The Multi-Component Diafiltration unit model has :math:`5+2n` degrees of freedom, where :math:`n` is the number of cations in the system:
+The Multi-Component Diafiltration unit model has :math:`5+2n` degrees of freedom, where :math:`n` is the number of cations in the system (assuming a time index of :math:`[0]`):
 
 #. the length of the membrane module (``total_module_length``)
 #. the length of the membrane (``total_membrane_length``)
 #. the pressure applied to the membrane system (``applied_pressure``)
 #. the volumetric flow rate of the feed (``feed_flow_volume``)
-#. the cation concentration in the feed (``feed_conc_mol_comp[t,k]``)
+#. the cation concentration in the feed (``feed_conc_mol_comp[0,k]``)
 #. the volumetric flow rate of the diafiltrate (``diafiltrate_flow_volume``)
-#. the cation concentration in the diafiltrate (``diafiltrate_conc_mol_comp[t,k]``)
+#. the cation concentration in the diafiltrate (``diafiltrate_conc_mol_comp[0,k]``)
 
 Model Structure
 ---------------
@@ -68,11 +72,11 @@ Assumptions
 
 * The membrane module dimensions, maximum applied pressure, and inlet flow rates assume that one tube (one instance of this model) consists of 4 NF270-440 membranes in series.
 
-* The partitioning relationships, which describe how the solutes transition (partition) across the solution-membrane interfaces, are derived assuming Donnan equilibrium. The partitioning coefficients incorporate both steric and Donnan effects.
+* The partitioning relationships, which describe how the solutes transition (partition) across the solution-membrane interfaces, are derived assuming Donnan equilibrium and lumped non-Donnan effects (e.g., contributions from steric, dielectric, non-ideal activity coefficient ratios).
 
-* The default value for the membrane's surface charge (:math:`-44 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_). Currently, the default property package only supports negatively charged membranes.
+* The default value for the membrane's surface charge (:math:`-44 \, \mathrm{mM}`), was calculated using zeta potential measurements for NF270 membranes. (See `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_).
 
-* The boundary layer thickness is assumed to be :math:`20 \, \mathrm{\mu m}` and the membrane thickness is assumed to be :math:`100 \, \mathrm{nm}`.
+* The boundary layer thickness is assumed to be :math:`20 \, \mathrm{\mu m}` for each ion.
 
 * The default value for the membrane permeability (:math:`0.01 \, \mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`) is based off of parameter estimation results from `this reference <https://doi.org/10.1021/acs.iecr.4c04763>`_ for NF270 membranes.
 
@@ -111,16 +115,16 @@ Default Model Parameters
 
 The Multi-Component Diafiltration model has the following parameters.
 
-================ =============================================== ================================== ============= ==========================================================
+================ =============================================== ================================== ============= =============================================================================
 Parameter        Description                                     Name                               Default Value Units
-================ =============================================== ================================== ============= ==========================================================
+================ =============================================== ================================== ============= =============================================================================
 :math:`\epsilon` numerical tolerance for zero values             ``numerical_zero_tolerance``       :math:`1e-10`
 :math:`\delta`   boundary layer thickness                        ``total_boundary_layer_thickness`` :math:`2e-05` :math:`\mathrm{m}`
 :math:`l`        membrane thickness                              ``total_membrane_thickness``       :math:`1e-07` :math:`\mathrm{m}`
-:math:`L_p`      hydraulic permeability of the membrane          ``membrane_permeability``          :math:`0.01`  :math:`\mathrm{m} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`
+:math:`L_p`      hydraulic permeability of the membrane          ``membrane_permeability``          :math:`11`    :math:`\mathrm{L} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1} \, \mathrm{bar}^{-1}`
 :math:`T`        temperature of the system                       ``temperature``                    :math:`298`   :math:`\mathrm{K}`
 :math:`\chi`     concentration of surface charge on the membrane ``membrane_fixed_charge``          :math:`-44`   :math:`\mathrm{mol} \, \mathrm{m}^{-3}`
-================ =============================================== ================================== ============= ==========================================================
+================ =============================================== ================================== ============= =============================================================================
 
 Variables
 ---------
@@ -134,7 +138,7 @@ Variable                        Description                                     
 :math:`c_{i,d}`                 ion concentration in the diafiltrate                                 ``diafiltrate_conc_mol_comp``                           :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t` and :math:`i \in \mathcal{I}`
 :math:`c_{i,f}`                 ion concentration in the feed                                        ``feed_conc_mol_comp``                                  :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t` and :math:`i \in \mathcal{I}`
 :math:`c_{i,m}`                 ion concentration in the membrane                                    ``membrane_conc_mol_comp``                              :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, :math:`\bar{z}_m`, and :math:`i \in \mathcal{I}`
-:math:`c_{i,p}`                 ion concentration in the permeate                                    ``permeate_conc_mol_comp``                              :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
+:math:`c_{i,p}`                 ion concentration in the permeate                                    ``permeate_local_conc_mol_comp``                        :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
 :math:`c_{i,r}`                 ion concentration in the retentate                                   ``retentate_conc_mol_comp``                             :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
 :math:`\tilde{D}_{bl}`          cross-diffusion coefficient denominator in the boundary layer        ``boundary_layer_D_tilde``                              :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, and :math:`\bar{z}_{bl}`
 :math:`D_{kj,bl}^{bilinear}`    bilinear cross-diffusion coefficient in the membrane                 ``boundary_layer_cross_diffusion_coefficient_bilinear`` :math:`\mathrm{mm}^4 \, \mathrm{h}^{-2} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}_{bl}`, :math:`k \in \mathcal{K}`, and :math:`j \in \mathcal{K}`
@@ -144,14 +148,17 @@ Variable                        Description                                     
 :math:`\alpha_{k,m}^{bilinear}` bilinear convection coefficient in the membrane                      ``membrane_convection_coefficient_bilinear``            :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1} \, \mathrm{mol} \, \mathrm{m}^{-3}` :math:`t`, :math:`\bar{x}`, :math:`\bar{z}_m`, and :math:`k \in \mathcal{K}`
 :math:`D_{kj,m}`                cross-diffusion coefficient in the membrane                          ``membrane_cross_diffusion_coefficient``                :math:`\mathrm{mm}^2 \, \mathrm{h}^{-1}`                                    :math:`t`, :math:`\bar{x}`, :math:`\bar{z}_m`, :math:`k \in \mathcal{K}`, and :math:`j \in \mathcal{K}`
 :math:`\alpha_{k,m}`            convection coefficient in the membrane                               ``membrnane_convection_coefficient``                    :math:`\mathrm{dimensionless}`                                              :math:`t`, :math:`\bar{x}`, :math:`\bar{z}_m`, and :math:`k \in \mathcal{K}`
-:math:`j_i`                     molar flux of ions through the membrane                              ``molar_ion_flux``                                      :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}`                  :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
+:math:`j_i`                     molar flux of ions                                                   ``molar_ion_flux``                                      :math:`\mathrm{mol} \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}`                  :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
 :math:`J_w`                     water flux across the membrane                                       ``volume_flux_water``                                   :math:`\mathrm{m}^3 \, \mathrm{m}^{-2} \, \mathrm{h}^{-1}`                  :math:`t` and :math:`\bar{x}`
 :math:`L`                       length of the membrane                                               ``total_membrane_length``                               :math:`\mathrm{m}`
 :math:`\Delta \pi`              osmotic pressure of feed-side fluid                                  ``osmotic_pressure``                                    :math:`\mathrm{bar}`                                                        :math:`t` and :math:`\bar{x}`
 :math:`\Delta P`                applied pressure to the membrane                                     ``applied_pressure``                                    :math:`\mathrm{bar}`                                                        :math:`t`
+:math:`\Phi_{i,f}^{bilinear}`   bilinear partitioning term for the feed-side interface               ``partitioning_term_bilinear_feed``                     :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
+:math:`\Phi_{i,p}^{bilinear}`   bilinear partitioning term for the permeate-side interface           ``partitioning_term_bilinear_permeate``                 :math:`\mathrm{mol} \, \mathrm{m}^{-3}`                                     :math:`t`, :math:`\bar{x}`, and :math:`i \in \mathcal{I}`
+:math:`\Delta \Psi^D_f`         dimensionless Donnan potential on the feed-side                      ``Donnan_potential_feed_side``                          :math:`\mathrm{dimensionless}`                                              :math:`t` and :math:`\bar{x}`
+:math:`\Delta \Psi^D_p`         dimensionless Donnan potential on the permeate-side                  ``Donnan_potential_permeate_side``                      :math:`\mathrm{dimensionless}`                                              :math:`t` and :math:`\bar{x}`
 :math:`q_d`                     volumetric flow rate of the diafiltrate                              ``diafiltrate_flow_volume``                             :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t`
 :math:`q_f`                     volumetric flow rate of the feed                                     ``feed_flow_volume``                                    :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t`
-:math:`q_p`                     volumetric flow rate of the permeate                                 ``permeate_flow_volume``                                :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t` and :math:`\bar{x}`
 :math:`q_r`                     volumetric flow rate of the retentate                                ``retentate_flow_volume``                               :math:`\mathrm{m}^3 \, \mathrm{h}^{-1}`                                     :math:`t` and :math:`\bar{x}`
 :math:`w`                       length of the membrane module                                        ``total_module_length``                                 :math:`\mathrm{m}`
 =============================== ==================================================================== ======================================================= =========================================================================== ==========================================================================================================
@@ -180,7 +187,6 @@ Constraints
 
 **Bulk flux balances:**
 
-.. math:: q_p(\bar{x}) = \bar{x} wL J_w(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1]
 .. math:: j_{k}(\bar{x}) = c_{k,p}(\bar{x}) J_w(\bar{x}) \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
 
 **Overall water flux through the membrane:**
@@ -189,11 +195,11 @@ Constraints
 
 *without a boundary layer:*
 
-.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{i \in \mathcal{I}} n_i \sigma_i (c_{i,r}(\bar{x})-c_{i,p}(\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{k \in \mathcal{K}} n_k \sigma_k (c_{k,r}(\bar{x})-c_{k,p}(\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
 
 *with a boundary layer:*
 
-.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{i \in \mathcal{I}} n_i \sigma_i (c_{i,bl}(\bar{x}, \bar{z}_{bl}=1)-c_{i,p}(\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
+.. math:: \Delta \pi (\bar{x}) = \mathrm{R} \mathrm{T} \sum_{k \in \mathcal{K}} n_k \sigma_k (c_{k,bl}(\bar{x}, \bar{z}_{bl}=1)-c_{k,p}(\bar{x})) \qquad \forall \, \bar{x} \in (0, 1]
 
 **Cation flux through the boundary layer and membrane:**
 
@@ -257,33 +263,134 @@ At the feed-side solution-membrane interface:
 
 *without a boundary layer:*
 
-.. math:: H_{k,r}^{-z_a} H_{a,r}^{z_k} = \left(\frac{c_{k,m} (\bar{x},\bar{z}=0)}{c_{k,r} (\bar{x})}\right)^{-z_a} \left(\frac{c_{a,m} (\bar{x},\bar{z}=0)}{c_{a,r}(\bar{x})}\right)^{z_k} \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
+.. math:: c_{i,m} (\bar{x},\bar{z}_m=0) = \Phi_{i,f}^{bilinear} \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+where
+
+.. math:: \Phi_{i,f}^{bilinear} = c_{i,r} (\bar{x}) \Phi_i \exp(-z_i \Delta \Psi^D_f) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
 
 *with a boundary layer:*
 
 .. math:: c_{k,r} (\bar{x}) = c_{k,bl} (\bar{x},\bar{z}_{bl}=0) \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
-.. math:: H_{k,r}^{-z_a} H_{a,r}^{z_k} = \left(\frac{c_{k,m} (\bar{x},\bar{z}_m=0)} {c_{k,bl} (\bar{x},\bar{z}_{bl}=1)}\right)^{-z_a} \left(\frac{c_{a,m} (\bar{x},\bar{z}_m=0)}{c_{a,bl}(\bar{x},\bar{z}_{bl}=1)}\right)^{z_k} \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
+.. math:: c_{i,m} (\bar{x},\bar{z}_m=0) = \Phi_{i,f}^{bilinear} \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
 
+where
+
+.. math:: \Phi_{i,f}^{bilinear} = c_{i,bl} (\bar{x},\bar{z}_{bl}=1) \Phi_i \exp(-z_i \Delta \Psi^D_f) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
 
 At the membrane-permeate interface:
 
-.. math:: H_{k,p}^{-z_a} H_{a,p}^{z_k} = \left(\frac{c_{k,m} (\bar{x},\bar{z}=1)}{c_{k,p} (\bar{x})}\right)^{-z_a} \left(\frac{c_{a,m} (\bar{x},\bar{z}=1)}{c_{a,p}(\bar{x})}\right)^{z_k} \qquad \forall \, \bar{x} \in (0, 1], \, k \in \mathcal{K}
+.. math:: c_{i,m} (\bar{x},\bar{z}_m=1) = \Phi_{i,p}^{bilinear} \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+where
+
+.. math:: \Phi_{i,p}^{bilinear} = c_{i,p} (\bar{x}) \Phi_i \exp(-z_i \Delta \Psi^D_p) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
 
 **Boundary conditions:**
 
 .. math:: q_r(\bar{x}=0) = q_f + q_d
 .. math:: c_{k,r}(\bar{x}=0) = \frac{q_f c_{k,f} + q_d c_{k,d}}{q_f + q_d} \qquad \forall \, k \in \mathcal{K}
-.. math:: c_{k,bl} (\bar{x}=0,\bar{z}_{bl}) = \epsilon \qquad \forall \, \bar{z}_{bl}, \, k \in \mathcal{K}
 .. math:: c_{k,m} (\bar{x}=0,\bar{z}_m) = \epsilon \qquad \forall \, \bar{z}_m, \, k \in \mathcal{K}
 
-The following constraints (which are expected to be zero) are enforced to improve numerical stability (with the appropriate constraints deactivated as described above):
+*with a boundary layer:*
 
-.. math:: q_p(\bar{x}=0) = \epsilon
-.. math:: c_{i,p}(\bar{x}=0) = \epsilon \qquad \forall \, i \in \mathcal{I}
-.. math:: \frac{\mathrm{d}q_r(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon
-.. math:: \frac{\mathrm{d}c_{k,r}(\bar{x})}{\mathrm{d}\bar{x}}(\bar{x}=0)=\epsilon \qquad \forall \, k \in \mathcal{K}
-.. math:: J_w(\bar{x}=0) = \epsilon
-.. math:: j_i(\bar{x}=0) = \epsilon \qquad \forall \, i \in \mathcal{I}
+.. math:: c_{k,bl} (\bar{x}=0,\bar{z}_{bl}) = \epsilon \qquad \forall \, \bar{z}_{bl}, \, k \in \mathcal{K}
+
+
+Helpful Expressions
+-------------------
+
+**Outlet permeate product:**
+
+flow rate (:math:`q_p^{outlet}`):
+
+.. math:: q_p^{outlet} = w L \sum_{n=1}^{NFE_x} J_w(\bar{x}_n) (\bar{x}_n - \bar{x}_{n-1})
+
+concentration (:math:`c_{i,p}^{outlet}`):
+
+.. math:: c_{i,p}^{outlet} = \frac{w L}{q_p^{outlet}} \sum_{n=1}^{NFE_x} j_i(\bar{x}_n) (\bar{x}_n - \bar{x}_{n-1}) \qquad \forall \, i \in \mathcal{I}
+
+**Inlet combined feed:**
+
+ionic strength:
+
+.. math:: \frac{1}{2} \sum_{i \in \mathcal{I}} z_i^2 \frac{q_f c_{i,f} + q_d c_{i,d}}{q_f + q_d}
+
+flow rate:
+
+.. math:: q_f + q_d
+
+concentration of ion :math:`i`:
+
+.. math:: \frac{q_f c_{i,f} + q_d c_{i,d}}{q_f + q_d}
+
+**Partitioning coefficients:**
+
+Feed-side (:math:`H_{i,f}`):
+
+*without a boundary layer:*
+
+.. math:: H_{i,f} (\bar{x}) = \frac{c_{i,m} (\bar{x},\bar{z}_m=0)}{c_{i,r} (\bar{x})} \qquad \forall \, i \in \mathcal{I}
+
+*with a boundary layer:*
+
+.. math:: H_{i,f} (\bar{x}) = \frac{c_{i,m} (\bar{x},\bar{z}_m=0)}{c_{i,bl} (\bar{x},\bar{z}_{bl}=1)} \qquad \forall \, i \in \mathcal{I}
+
+Permeate-side (:math:`H_{i,p}`):
+
+.. math:: H_{i,p} (\bar{x}) = \frac{c_{i,m} (\bar{x},\bar{z}_m=1)}{c_{i,p} (\bar{x})} \qquad \forall \, i \in \mathcal{I}
+
+**Rejection (%):**
+
+Observed, local (:math:`r_i^{obs}`):
+
+.. math:: r_i^{obs} (\bar{x}) = 1 - \frac{c_{i,p} (\bar{x})}{c_{i,r} (\bar{x})} * 100 \% \qquad \forall \, i \in \mathcal{I}
+
+Actual, local (:math:`r_i^{act}`):
+
+.. math:: r_i^{act} (\bar{x}) = 1 - \frac{c_{i,p} (\bar{x})}{c_{i,bl} (\bar{x}, \bar{z}_{bl}=1)} * 100 \% \qquad \forall \, i \in \mathcal{I}
+
+Observed, overall (:math:`R_i^{obs}`):
+
+.. math:: R_i^{obs} = 1 - \frac{c_{i,p}^{outlet}}{c_{i,r} (\bar{x}=0)} * 100 \% \qquad \forall \, i \in \mathcal{I}
+
+**Sieving coefficient:**
+
+Observed, local (:math:`s_i^{obs}`):
+
+.. math:: s_i^{obs} (\bar{x}) = \frac{c_{i,p} (\bar{x})}{c_{i,r} (\bar{x})} \qquad \forall \, i \in \mathcal{I}
+
+Actual, local (:math:`s_i^{act}`):
+
+.. math:: s_i^{act} (\bar{x}) = \frac{c_{i,p} (\bar{x})}{c_{i,bl} (\bar{x}, \bar{z}_{bl}=1)} \qquad \forall \, i \in \mathcal{I}
+
+Observed, overall (:math:`S_i^{obs}`):
+
+.. math:: S_i^{obs} = \frac{c_{i,p}^{outlet}}{c_{i,r} (\bar{x}=0)} \qquad \forall \, i \in \mathcal{I}
+
+**Convective Flux:**
+
+.. math:: j_{i,bl}^{conv} (\bar{x}, \bar{z}_{bl}) = c_{i,bl} (\bar{x}, \bar{z}_{bl}) J_w (\bar{x}) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+.. math:: j_{i,m}^{conv} (\bar{x}, \bar{z}_m) = c_{i,m} (\bar{x}, \bar{z}_m) J_w (\bar{x}) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+**Diffusive Flux:**
+
+.. math:: j_{i,bl}^{diff} (\bar{x}, \bar{z}_{bl}) = - \frac{D_{i,bl}}{\delta} \frac{\partial c_{i,bl} (\bar{x}, \bar{z}_{bl})}{\partial \bar{z}_{bl}} \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+.. math:: j_{i,m}^{diff} (\bar{x}, \bar{z}_m) = - \frac{D_{i,m}}{l} \frac{\partial c_{i,m} (\bar{x}, \bar{z}_m)}{\partial \bar{z}_m} \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+**Electromigrative Flux:**
+
+.. math:: j_{i,bl}^{elec} (\bar{x}, \bar{z}_{bl}) = - \frac{z_i D_{i,bl} F}{R T} c_{i,bl} (\bar{x}, \bar{z}_{bl}) \Delta \phi_{bl} (\bar{x}, \bar{z}_{bl}) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+.. math:: j_{i,m}^{elec} (\bar{x}, \bar{z}_m) = - \frac{z_i D_{i,m} F}{R T} c_{i,m} (\bar{x}, \bar{z}_m) \Delta \phi_m (\bar{x}, \bar{z}_m) \qquad \forall \, \bar{x} \in (0, 1], \, i \in \mathcal{I}
+
+where 
+
+.. math:: \Delta \phi_{bl} (\bar{x}, \bar{z}_{bl}) = - \frac{R T}{F} \frac{\sum_{i \in \mathcal{I}} \frac{z_i D_{i,bl}}{\delta} \frac{\partial c_{i,bl} (\bar{x}, \bar{z}_{bl})}{\partial \bar{z}_{bl}}}{\sum_{i \in \mathcal{I}} z_i^2 D_{i,bl} c_{i,bl} (\bar{x}, \bar{z}_{bl})}  \qquad \forall \, \bar{x} \in (0, 1]
+
+.. math:: \Delta \phi_m (\bar{x}, \bar{z}_m) = - \frac{R T}{F} \frac{J_w (\bar{x}) \chi + \sum_{i \in \mathcal{I}} \frac{z_i D_{i,m}}{l} \frac{\partial c_{i,m} (\bar{x}, \bar{z}_m)}{\partial \bar{z}_m}}{\sum_{i \in \mathcal{I}} z_i^2 D_{i,m} c_{i,m} (\bar{x}, \bar{z}_m)}  \qquad \forall \, \bar{x} \in (0, 1]
 """
 
 from pyomo.common.config import ConfigBlock, ConfigValue, ListOf
@@ -1708,6 +1815,9 @@ and used when constructing these,
         )
 
     def discretize_model(self):
+        """
+        Discretizes the multi-component diafiltration unit model.
+        """
         discretizer = TransformationFactory("dae.finite_difference")
         discretizer.apply_to(
             self,
@@ -1779,6 +1889,9 @@ and used when constructing these,
         self.scaling_factor[self.membrane_convection_coefficient] = 1e3
 
     def add_ports(self):
+        """
+        Adds feed and product ports to the multi-component diafiltration unit model.
+        """
         self.feed_inlet = Port(doc="Feed Inlet Port")
         self._feed_flow_volume_ref = Reference(self.feed_flow_volume)
         self.feed_inlet.add(self._feed_flow_volume_ref, "flow_vol")
@@ -1810,6 +1923,11 @@ and used when constructing these,
         self.permeate_outlet.add(self._permeate_conc_mol_comp_ref, "conc_mol_comp")
 
     def add_helpful_expressions(self):
+        """
+        Adds model expressions to the multi-component diafiltration unit model
+        to assist analysis.
+        """
+
         def _permeate_outlet_flow(blk, t):
             x_values = sorted(blk.dimensionless_module_length)
             q_perm_outlet = (
@@ -2155,8 +2273,8 @@ and used when constructing these,
             F = Constants.faraday_constant  # C / mol
             charge = blk.config.property_package.charge
             D_mem = blk.config.property_package.membrane_diffusion_coefficient
-            d_con_mem = blk.d_membrane_conc_mol_comp_dz
-            con_mem = blk.membrane_conc_mol_comp
+            d_conc_mem = blk.d_membrane_conc_mol_comp_dz
+            conc_mem = blk.membrane_conc_mol_comp
             J_w = blk.volume_flux_water
             chi = blk.membrane_fixed_charge
             return (-R * T / F) * (
@@ -2165,7 +2283,7 @@ and used when constructing these,
                         sum(
                             charge[j]
                             * D_mem[j]
-                            * (d_con_mem[t, x, z, j] / blk.total_membrane_thickness)
+                            * (d_conc_mem[t, x, z, j] / blk.total_membrane_thickness)
                             for j in blk.solutes
                         ),
                         to_units=units.mol / units.m**2 / units.h,
@@ -2174,7 +2292,7 @@ and used when constructing these,
                 )
                 / (
                     sum(
-                        charge[j] ** 2 * D_mem[j] * con_mem[t, x, z, j]
+                        charge[j] ** 2 * D_mem[j] * conc_mem[t, x, z, j]
                         for j in blk.solutes
                     )
                 )

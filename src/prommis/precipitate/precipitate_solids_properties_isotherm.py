@@ -139,7 +139,7 @@ class PrecipitateParametersData(PhysicalParameterBlock):
                 "Dy2(C2O4)3(s)": 769.21 * 1e-3,
                 "Al2(C2O4)3(s)": 318.02 * 1e-3,
                 "Ca(C2O4)(s)": 128.097 * 1e-3,
-                "Fe2(C2O4)3(s)": 143.86 * 1e-3,
+                "Fe2(C2O4)3(s)": 375.75 * 1e-3,
             },
         )
 

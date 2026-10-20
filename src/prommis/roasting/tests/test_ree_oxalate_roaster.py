@@ -23,6 +23,7 @@ from idaes.core.initialization import (
     InitializationStatus,
 )
 from idaes.core.scaling.util import jacobian_cond
+from idaes.core.util.testing import assert_solution_equivalent
 from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.model_statistics import (
     number_total_constraints,
@@ -208,36 +209,35 @@ def test_numerical_issues(model):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution(model):
-    flow_mol_out_gas = value(model.fs.roaster.gas_out[0].flow_mol)
-    assert flow_mol_out_gas == pytest.approx(0.008487, rel=1e-5, abs=1e-6)
-    mole_frac_h2o = value(model.fs.roaster.gas_out[0].mole_frac_comp["H2O"])
-    assert mole_frac_h2o == pytest.approx(0.172195, rel=1e-5, abs=1e-6)
-    mole_frac_o2 = value(model.fs.roaster.gas_out[0].mole_frac_comp["O2"])
-    assert mole_frac_o2 == pytest.approx(0.102842, rel=1e-5, abs=1e-6)
-    mole_frac_co2 = value(model.fs.roaster.gas_out[0].mole_frac_comp["CO2"])
-    assert mole_frac_co2 == pytest.approx(0.039795, rel=1e-5, abs=1e-6)
-    heat_duty = value(model.fs.roaster.heat_duty[0])
-    assert heat_duty == pytest.approx(-82.248, rel=1e-5, abs=1e-6)
-    flow_mass_product = value(model.fs.roaster.flow_mass_product[0])
-    assert flow_mass_product == pytest.approx(4.9676e-08, rel=1e-5, abs=1e-9)
-    mass_frac_comp_product = {
-        "Al": 0.03303983600788328,
-        "Fe": 0.051745591869350606,
-        "Ca": 0.018171407536352827,
-        "Sc": 0.04468856468660738,
-        "Y": 0.0731720199792481,
-        "La": 0.1055789983285816,
-        "Ce": 0.10636318446974416,
-        "Pr": 0.10687517376851974,
-        "Nd": 0.10903330587601676,
-        "Sm": 0.11299960272222746,
-        "Gd": 0.11746492711281438,
-        "Dy": 0.12086738764265201,
+    model = model
+    tol = 1e-4
+
+    expected_results = {}
+
+    expected_results["roaster.gas_outlet.flow_mol"] = {0: (0.008487, tol, None)}
+    expected_results["roaster.gas_outlet.mole_frac_comp"] = {
+        (0, "H2O"): (0.172195, tol, None),
+        (0, "O2"): (0.102842, tol, None),
+        (0, "CO2"): (0.039795, tol, None),
     }
-    for i in model.fs.roaster.metal_list:
-        assert value(model.fs.roaster.mass_frac_comp_product[0, i]) == pytest.approx(
-            mass_frac_comp_product[i], rel=1e-5, abs=1e-6
-        )
+    expected_results["roaster.heat_duty"] = {0: (-82.248, tol, None)}
+    expected_results["roaster.flow_mass_product"] = {0: (4.9676e-8, tol, None)}
+    expected_results["roaster.mass_frac_comp_product"] = {
+        (0, "Al"): (0.03303983600788328, tol, None),
+        (0, "Fe"): (0.051745591869350606, tol, None),
+        (0, "Ca"): (0.018171407536352827, tol, None),
+        (0, "Sc"): (0.04468856468660738, tol, None),
+        (0, "Y"): (0.0731720199792481, tol, None),
+        (0, "La"): (0.1055789983285816, tol, None),
+        (0, "Ce"): (0.10636318446974416, tol, None),
+        (0, "Pr"): (0.10687517376851974, tol, None),
+        (0, "Nd"): (0.10903330587601676, tol, None),
+        (0, "Sm"): (0.11299960272222746, tol, None),
+        (0, "Gd"): (0.11746492711281438, tol, None),
+        (0, "Dy"): (0.12086738764265201, tol, None),
+    }
+
+    assert_solution_equivalent(model.fs, expected_results)
 
 
 @pytest.fixture(scope="module")
@@ -396,36 +396,35 @@ def test_numerical_issues_coal_fired(model_coal_fired):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_coal_fired(model_coal_fired):
-    flow_mol_out_gas = value(model_coal_fired.fs.roaster.gas_out[0].flow_mol)
-    assert flow_mol_out_gas == pytest.approx(0.008487, rel=1e-5, abs=1e-6)
-    mole_frac_h2o = value(model_coal_fired.fs.roaster.gas_out[0].mole_frac_comp["H2O"])
-    assert mole_frac_h2o == pytest.approx(0.153331, rel=1e-5, abs=1e-6)
-    mole_frac_o2 = value(model_coal_fired.fs.roaster.gas_out[0].mole_frac_comp["O2"])
-    assert mole_frac_o2 == pytest.approx(0.0459751, rel=1e-5, abs=1e-6)
-    mole_frac_co2 = value(model_coal_fired.fs.roaster.gas_out[0].mole_frac_comp["CO2"])
-    assert mole_frac_co2 == pytest.approx(0.128961, rel=1e-5, abs=1e-6)
-    heat_duty = value(model_coal_fired.fs.roaster.heat_duty[0])
-    assert heat_duty == pytest.approx(-88.75058, rel=1e-5, abs=1e-6)
-    flow_mass_product = value(model_coal_fired.fs.roaster.flow_mass_product[0])
-    assert flow_mass_product == pytest.approx(4.9676e-08, rel=1e-5, abs=1e-9)
-    mass_frac_comp_product = {
-        "Al": 0.03303983600788328,
-        "Fe": 0.051745591869350606,
-        "Ca": 0.018171407536352827,
-        "Sc": 0.04468856468660738,
-        "Y": 0.0731720199792481,
-        "La": 0.1055789983285816,
-        "Ce": 0.10636318446974416,
-        "Pr": 0.10687517376851974,
-        "Nd": 0.10903330587601676,
-        "Sm": 0.11299960272222746,
-        "Gd": 0.11746492711281438,
-        "Dy": 0.12086738764265201,
+    model = model_coal_fired
+    tol = 1e-4
+
+    expected_results = {}
+
+    expected_results["roaster.gas_outlet.flow_mol"] = {0: (0.008487, tol, None)}
+    expected_results["roaster.gas_outlet.mole_frac_comp"] = {
+        (0, "H2O"): (0.153331, tol, None),
+        (0, "O2"): (0.0459751, tol, None),
+        (0, "CO2"): (0.128961, tol, None),
     }
-    for i in model_coal_fired.fs.roaster.metal_list:
-        assert value(
-            model_coal_fired.fs.roaster.mass_frac_comp_product[0, i]
-        ) == pytest.approx(mass_frac_comp_product[i], rel=1e-5, abs=1e-6)
+    expected_results["roaster.heat_duty"] = {0: (-88.75058, tol, None)}
+    expected_results["roaster.flow_mass_product"] = {0: (4.9676e-8, tol, None)}
+    expected_results["roaster.mass_frac_comp_product"] = {
+        (0, "Al"): (0.03303983600788328, tol, None),
+        (0, "Fe"): (0.051745591869350606, tol, None),
+        (0, "Ca"): (0.018171407536352827, tol, None),
+        (0, "Sc"): (0.04468856468660738, tol, None),
+        (0, "Y"): (0.0731720199792481, tol, None),
+        (0, "La"): (0.1055789983285816, tol, None),
+        (0, "Ce"): (0.10636318446974416, tol, None),
+        (0, "Pr"): (0.10687517376851974, tol, None),
+        (0, "Nd"): (0.10903330587601676, tol, None),
+        (0, "Sm"): (0.11299960272222746, tol, None),
+        (0, "Gd"): (0.11746492711281438, tol, None),
+        (0, "Dy"): (0.12086738764265201, tol, None),
+    }
+
+    assert_solution_equivalent(model.fs, expected_results)
 
 
 @pytest.fixture(scope="module")
@@ -584,38 +583,35 @@ def test_numerical_issues_gas_fired(model_gas_fired):
 @pytest.mark.component
 @pytest.mark.solver
 def test_solution_gas_fired(model_gas_fired):
-    flow_mol_out_gas = value(model_gas_fired.fs.roaster.gas_out[0].flow_mol)
-    assert flow_mol_out_gas == pytest.approx(0.008487, rel=1e-5, abs=1e-6)
-    mole_frac_h2o = value(model_gas_fired.fs.roaster.gas_out[0].mole_frac_comp["H2O"])
-    assert mole_frac_h2o == pytest.approx(0.153331, rel=1e-5, abs=1e-6)
-    mole_frac_o2 = value(model_gas_fired.fs.roaster.gas_out[0].mole_frac_comp["O2"])
-    assert mole_frac_o2 == pytest.approx(0.110388, rel=1e-5, abs=1e-6)
-    mole_frac_co2 = value(model_gas_fired.fs.roaster.gas_out[0].mole_frac_comp["CO2"])
-    assert mole_frac_co2 == pytest.approx(0.036943, rel=1e-5, abs=1e-6)
-    heat_duty = value(model_gas_fired.fs.roaster.heat_duty[0])
-    assert heat_duty == pytest.approx(-81.3816, rel=1e-5, abs=1e-6)
-    flow_mass_product = value(model_gas_fired.fs.roaster.flow_mass_product[0])
-    assert flow_mass_product == pytest.approx(4.9676e-08, rel=1e-5, abs=1e-9)
-    mass_frac_comp_product = {
-        "Al": 0.03303983600788328,
-        "Fe": 0.051745591869350606,
-        "Ca": 0.018171407536352827,
-        "Sc": 0.04468856468660738,
-        "Y": 0.0731720199792481,
-        "La": 0.1055789983285816,
-        "Ce": 0.10636318446974416,
-        "Pr": 0.10687517376851974,
-        "Nd": 0.10903330587601676,
-        "Sm": 0.11299960272222746,
-        "Gd": 0.11746492711281438,
-        "Dy": 0.12086738764265201,
+    model = model_gas_fired
+    tol = 1e-4
+
+    expected_results = {}
+
+    expected_results["roaster.gas_outlet.flow_mol"] = {0: (0.008487, tol, None)}
+    expected_results["roaster.gas_outlet.mole_frac_comp"] = {
+        (0, "H2O"): (0.153331, tol, None),
+        (0, "O2"): (0.110388, tol, None),
+        (0, "CO2"): (0.036943, tol, None),
+    }
+    expected_results["roaster.heat_duty"] = {0: (-81.3816, tol, None)}
+    expected_results["roaster.flow_mass_product"] = {0: (4.9676e-8, tol, None)}
+    expected_results["roaster.mass_frac_comp_product"] = {
+        (0, "Al"): (0.03303983600788328, tol, None),
+        (0, "Fe"): (0.051745591869350606, tol, None),
+        (0, "Ca"): (0.018171407536352827, tol, None),
+        (0, "Sc"): (0.04468856468660738, tol, None),
+        (0, "Y"): (0.0731720199792481, tol, None),
+        (0, "La"): (0.1055789983285816, tol, None),
+        (0, "Ce"): (0.10636318446974416, tol, None),
+        (0, "Pr"): (0.10687517376851974, tol, None),
+        (0, "Nd"): (0.10903330587601676, tol, None),
+        (0, "Sm"): (0.11299960272222746, tol, None),
+        (0, "Gd"): (0.11746492711281438, tol, None),
+        (0, "Dy"): (0.12086738764265201, tol, None),
     }
 
-    for i in model_gas_fired.fs.roaster.metal_list:
-        base_metal = model_gas_fired.fs.roaster.base_metal[i]
-        assert value(
-            model_gas_fired.fs.roaster.mass_frac_comp_product[0, i]
-        ) == pytest.approx(mass_frac_comp_product[base_metal], rel=1e-5, abs=1e-6)
+    assert_solution_equivalent(model.fs, expected_results)
 
 
 @pytest.mark.parametrize(

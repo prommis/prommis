@@ -28,9 +28,9 @@ This example uses the ion exchange multicomponent (IXMC) model and
 parmest package to estimate three key parameters from breakthrough
 data under the Freundlich isotherm assumption:
 
-#. :math:`mass_transfer_coeff`: Overall mass transfer coefficient
-#. :math:`freundlich_n`       : Freundlich exponent n
-#. :math:`bv_50`              : Bed volumes required for 50% breakthrough
+#. :math:`mass\_transfer\_coeff`: Overall mass transfer coefficient
+#. :math:`freundlich\_n`       : Freundlich exponent n
+#. :math:`bv\_50`              : Bed volumes required for 50% breakthrough
 
 The parmest model reads a CSV file that contains one or more
 breakthrough curves, selects a single curve, constructs an IX model,
@@ -45,25 +45,25 @@ The ``IXParmest`` class requires the following keyword arguments
 .. csv-table:: Required keyword arguments in ``IXParmest`` class.
    :header: "Argument", "Type", "Description"
 
-   ":math:`curve_file`", ":math:`str`", "CSV file with breakthrough data."
-   ":math:`data_name`", ":math:`str`", "Base name of the CSV data file."
+   ":math:`curve\_file`", ":math:`str`", "CSV file with breakthrough data."
+   ":math:`data\_name`", ":math:`str`", "Base name of the CSV data file."
    ":math:`curve`", ":math:`int`", "Identifier number of the curve to analyse in breakthrough data file."
-   ":math:`num_traps`", ":math:`int`", "Number of trapezoids for the numerical integration in the IX unit. "
-   ":math:`c_trap_min`", ":math:`float`", "Minimum concentration for trapezoidal rule."
-   ":math:`resin_data`", ":math:`dict`", "Resin properties for the IX unit."
-   ":math:`initial_guess_dict`", ":math:`dict`", "Initial values for the parameters to be estimated."
-   ":math:`set_bounds`", ":math:`dict`", "Bounds for the IX unit variables, including the parameters to be estimated."
-   ":math:`component_data`", ":math:`dict`", "Properties of target ion."
+   ":math:`num\_traps`", ":math:`int`", "Number of trapezoids for the numerical integration in the IX unit. "
+   ":math:`c\_trap\_min`", ":math:`float`", "Minimum concentration for trapezoidal rule."
+   ":math:`resin\_data`", ":math:`dict`", "Resin properties for the IX unit."
+   ":math:`initial\_guess\_dict`", ":math:`dict`", "Initial values for the parameters to be estimated."
+   ":math:`set\_bounds`", ":math:`dict`", "Bounds for the IX unit variables, including the parameters to be estimated."
+   ":math:`component\_data`", ":math:`dict`", "Properties of target ion."
    ":math:`regenerant`", ":math:`str`", "Regenerant name for the IX unit."
-   ":math:`fix_initial_guess`", ":math:`dict`", "Values that are fixed before estimation."
-   ":math:`scale_from_value`", ":math:`list[str]`", "Variables whose scaling factor is 1/value."
-   ":math:`diff_calculation`", ":math:`str`", "Method for estimating diffusivity, when data is not provided."
-   ":math:`c0_min_thresh`", ":math:`float`", "Threshold for the inlet concentration."
+   ":math:`fix\_initial\_guess`", ":math:`dict`", "Values that are fixed before estimation."
+   ":math:`scale\_from\_value`", ":math:`list[str]`", "Variables whose scaling factor is 1/value."
+   ":math:`diff\_calculation`", ":math:`str`", "Method for estimating diffusivity, when data is not provided."
+   ":math:`c0\_min\_thresh`", ":math:`float`", "Threshold for the inlet concentration."
    ":math:`thetas`", ":math:`list[str]`", "Names of parameters to be estimated."
 
 Degrees of Freedom
 ------------------
-When the model is built (`IXParmest.build_model`) all inlet, design
+When the model is built (`IXParmest.build\_model`) all inlet, design
 and operating variables are fixed, leaving zero degrees of freedom.
 
 """

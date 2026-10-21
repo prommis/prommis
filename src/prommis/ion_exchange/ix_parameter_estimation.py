@@ -56,7 +56,7 @@ The ``IXParmest`` class requires the following keyword arguments
    ":math:`component_data`", ":math:`dict`", "Properties of target ion."
    ":math:`regenerant`", ":math:`str`", "Regenerant name for the IX unit."
    ":math:`fix_initial_guess`", ":math:`dict`", "Values that are fixed before estimation."
-   ":math:`scale_from_value`", ":math:`list[str]`:, "Variables whose scaling factor is 1/value."
+   ":math:`scale_from_value`", ":math:`list[str]`", "Variables whose scaling factor is 1/value."
    ":math:`diff_calculation`", ":math:`str`", "Method for estimating diffusivity, when data is not provided."
    ":math:`c0_min_thresh`", ":math:`float`", "Threshold for the inlet concentration."
    ":math:`thetas`", ":math:`list[str]`", "Names of parameters to be estimated."

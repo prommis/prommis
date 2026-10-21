@@ -19,14 +19,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
-import os
 import pytest
-import pandas as pd
-import numpy as np
-import json
-import types
-
-import pyomo.environ as pyo
 
 from prommis.ion_exchange.ix_parameter_estimation import (
     IXParmest,

@@ -19,7 +19,7 @@
 
 r"""
 
-Ion‑Exchange Parameter‑Estimation Model
+Ion Exchange Parameter Estimation Model
 =======================================
 
 Author: E. Soraya Rawlings

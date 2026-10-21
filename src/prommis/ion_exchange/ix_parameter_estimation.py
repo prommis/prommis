@@ -44,7 +44,6 @@ The ``IXParmest`` class requires the following keyword arguments
 
 .. csv-table:: Required keyword arguments in ``IXParmest`` class.
    :header: "Argument", "Type", "Description"
-   :class_req_table
 
    ":math:`curve_file`", ":math:`str`", "CSV file with breakthrough data."
    ":math:`data_name`", ":math:`str`", "Base name of the CSV data file."

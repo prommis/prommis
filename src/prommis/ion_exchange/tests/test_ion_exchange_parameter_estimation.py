@@ -21,6 +21,8 @@
 
 import pytest
 
+pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+
 from prommis.ion_exchange.ix_parameter_estimation import (
     IXParmest,
     run_parmest_workflow,

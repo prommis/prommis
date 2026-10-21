@@ -93,8 +93,6 @@ from idaes.core.util.scaling import (
     unset_scaling_factor,
 )
 
-pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-
 from watertap.property_models.multicomp_aq_sol_prop_pack import MCASParameterBlock
 
 from prommis.ion_exchange.ion_exchange_multicomponent import IonExchangeMultiComp

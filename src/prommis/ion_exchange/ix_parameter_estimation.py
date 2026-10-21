@@ -17,6 +17,58 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
+r"""
+
+Ion‑Exchange Parameter‑Estimation Model
+=======================================
+
+Author: E. Soraya Rawlings  
+
+This example uses the ion exchange multicomponent (IXMC) model and
+parmest package to estimate three key parameters from breakthrough
+data under the Freundlich isotherm assumption:
+
+- ``mass_transfer_coeff``: Overall mass transfer coefficient
+- ``freundlich_n``       : Freundlich exponent n  
+- ``bv_50``              : Bed volumes required for 50% breakthrough
+
+This parmest model reads a CSV file that contains one or more
+breakthrough curves, selects a single curve, constructs an IX model,
+generates a list of ``IXExperiment`` objects for each data point, and
+runs a scaled non‑linear least‑squares fit to obtain the parameters.
+
+Configuration Arguments
+-----------------------
+The ``IXParmest`` class requires the following keyword arguments
+(passed through the ``main`` helper):
+
+| Argument                | Type / Units                         | Description |
+|-------------------------|--------------------------------------|-------------|
+| ``curve_file``          | ``str`` (path)                       | CSV file with breakthrough data. |
+| ``data_name``           | ``str``                              | Base name of the CSV data file. |
+| ``curve``               | ``int``                              | Identifier number of the curve to analyse in breakthrough data file. |
+| ``num_traps``           | ``int``                              | Number of trapezoids for the numerical integration in the IX unit. |
+| ``c_trap_min``          | ``float``                            | Minimum concentration for trapezoidal rule. |
+| ``resin_data``          | ``dict``                             | Resin properties for the IX unit. |
+| ``initial_guess_dict``  | ``dict``                             | Initial values for the parameters to be estimated. |
+| ``set_bounds``          | ``dict``                             | Bounds for the IX unit variables, including the parameters to be estimated. |
+| ``component_data``      | ``dict``                             | Properties of target ion. |
+| ``regenerant``          | ``str`` (e.g. ``"single_use"``)      | Regenerant name for the IX unit. |
+| ``fix_initial_guess``   | ``dict``                             | Values that are fixed before estimation. |
+| ``scale_from_value``    | ``list[str]``                        | Variables whose scaling factor is 1/value. |
+| ``diff_calculation``    | ``str``                              | Method for estimating diffusivity, when data is not provided. |
+| ``c0_min_thresh``       | ``float``                            | Threshold for the inlet concentration. |
+| ``thetas``              | ``list[str]``                        | Names of parameters to be estimated. |
+
+
+
+Degrees of Freedom
+------------------
+When the model is built (`IXParmest.build_model`) all inlet, design
+and operating variables are fixed, leaving zero degrees of freedom.
+
+"""
+
 import csv
 import json
 import logging

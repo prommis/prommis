@@ -19,15 +19,16 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
-import pytest
-
-pytest.importorskip("watertap", reason="WaterTAP dependency not available")
-
 from prommis.ion_exchange.ix_parameter_estimation import (
     IXParmest,
     run_parmest_workflow,
     main,
 )
+
+import pytest
+
+pytest.importorskip("watertap", reason="WaterTAP dependency not available")
+
 
 
 @pytest.fixture(scope="module")

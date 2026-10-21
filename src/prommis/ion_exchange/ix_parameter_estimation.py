@@ -63,7 +63,7 @@ The ``IXParmest`` class requires the following keyword arguments
 
 Degrees of Freedom
 ------------------
-When the model is built (`IXParmest.build\_model`) all inlet, design
+When the model is built (`IXParmest.build_model`) all inlet, design
 and operating variables are fixed, leaving zero degrees of freedom.
 
 """

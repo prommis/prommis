@@ -22,14 +22,14 @@ r"""
 Ion‑Exchange Parameter‑Estimation Model
 =======================================
 
-Author: E. Soraya Rawlings  
+Author: E. Soraya Rawlings
 
 This example uses the ion exchange multicomponent (IXMC) model and
 parmest package to estimate three key parameters from breakthrough
 data under the Freundlich isotherm assumption:
 
 #. :math:`mass_transfer_coeff`: Overall mass transfer coefficient
-#. :math:`freundlich_n`       : Freundlich exponent n  
+#. :math:`freundlich_n`       : Freundlich exponent n
 #. :math:`bv_50`              : Bed volumes required for 50% breakthrough
 
 The parmest model reads a CSV file that contains one or more

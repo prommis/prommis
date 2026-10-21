@@ -28,11 +28,11 @@ This example uses the ion exchange multicomponent (IXMC) model and
 parmest package to estimate three key parameters from breakthrough
 data under the Freundlich isotherm assumption:
 
-- ``mass_transfer_coeff``: Overall mass transfer coefficient
-- ``freundlich_n``       : Freundlich exponent n  
-- ``bv_50``              : Bed volumes required for 50% breakthrough
+#. :math:`mass_transfer_coeff`: Overall mass transfer coefficient
+#. :math:`freundlich_n`       : Freundlich exponent n  
+#. :math:`bv_50`              : Bed volumes required for 50% breakthrough
 
-This parmest model reads a CSV file that contains one or more
+The parmest model reads a CSV file that contains one or more
 breakthrough curves, selects a single curve, constructs an IX model,
 generates a list of ``IXExperiment`` objects for each data point, and
 runs a scaled non‑linear least‑squares fit to obtain the parameters.
@@ -42,25 +42,25 @@ Configuration Arguments
 The ``IXParmest`` class requires the following keyword arguments
 (passed through the ``main`` helper):
 
-| Argument                | Type / Units                         | Description |
-|-------------------------|--------------------------------------|-------------|
-| ``curve_file``          | ``str`` (path)                       | CSV file with breakthrough data. |
-| ``data_name``           | ``str``                              | Base name of the CSV data file. |
-| ``curve``               | ``int``                              | Identifier number of the curve to analyse in breakthrough data file. |
-| ``num_traps``           | ``int``                              | Number of trapezoids for the numerical integration in the IX unit. |
-| ``c_trap_min``          | ``float``                            | Minimum concentration for trapezoidal rule. |
-| ``resin_data``          | ``dict``                             | Resin properties for the IX unit. |
-| ``initial_guess_dict``  | ``dict``                             | Initial values for the parameters to be estimated. |
-| ``set_bounds``          | ``dict``                             | Bounds for the IX unit variables, including the parameters to be estimated. |
-| ``component_data``      | ``dict``                             | Properties of target ion. |
-| ``regenerant``          | ``str`` (e.g. ``"single_use"``)      | Regenerant name for the IX unit. |
-| ``fix_initial_guess``   | ``dict``                             | Values that are fixed before estimation. |
-| ``scale_from_value``    | ``list[str]``                        | Variables whose scaling factor is 1/value. |
-| ``diff_calculation``    | ``str``                              | Method for estimating diffusivity, when data is not provided. |
-| ``c0_min_thresh``       | ``float``                            | Threshold for the inlet concentration. |
-| ``thetas``              | ``list[str]``                        | Names of parameters to be estimated. |
+.. csv-table:: Required keyword arguments in ``IXParmest`` class.
+   :header: "Argument", "Type", "Description
+   :class_req_table
 
-
+   ":math:`curve_file`", ":math:`str`", "CSV file with breakthrough data."
+   ":math:`data_name`", ":math:`str`", "Base name of the CSV data file."
+   ":math:`curve`", ":math:`int`", "Identifier number of the curve to analyse in breakthrough data file."
+   ":math:`num_traps`", ":math:`int`", "Number of trapezoids for the numerical integration in the IX unit. "
+   ":math:`c_trap_min`", ":math:`float`", "Minimum concentration for trapezoidal rule."
+   ":math:`resin_data`", ":math:`dict`", "Resin properties for the IX unit."
+   ":math:`initial_guess_dict`", ":math:`dict`", "Initial values for the parameters to be estimated."
+   ":math:`set_bounds`", ":math:`dict`", "Bounds for the IX unit variables, including the parameters to be estimated."
+   ":math:`component_data`", ":math:`dict`", "Properties of target ion."
+   ":math:`regenerant`", ":math:`str`", "Regenerant name for the IX unit."
+   ":math:`fix_initial_guess`", ":math:`dict`", "Values that are fixed before estimation."
+   ":math:`scale_from_value`", ":math:`list[str]`:, "Variables whose scaling factor is 1/value."
+   ":math:`diff_calculation`", ":math:`str`", "Method for estimating diffusivity, when data is not provided."
+   ":math:`c0_min_thresh`", ":math:`float`", "Threshold for the inlet concentration."
+   ":math:`thetas`", ":math:`list[str]`", "Names of parameters to be estimated."
 
 Degrees of Freedom
 ------------------

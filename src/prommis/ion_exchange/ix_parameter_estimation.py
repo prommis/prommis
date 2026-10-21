@@ -227,9 +227,9 @@ class IXParmest:
         self.resin_func_group = self.resin_data[self.resin]["functional_group"]
         self.ebct_min = float(df.ebct.iloc[0])
         self.conc_units_str = df.conc_units.iloc[0]
-        numer = getattr(pyunits, self.conc_units_str.split("/")[0])
-        denom = getattr(pyunits, self.conc_units_str.split("/")[1])
-        self.conc_units = numer / denom
+        numerator = getattr(pyunits, self.conc_units_str.split("/")[0])
+        denominator = getattr(pyunits, self.conc_units_str.split("/")[1])
+        self.conc_units = numerator / denominator
         self.target_component = df.compound.iloc[0]
         self.num_traps = num_traps
         self.c_trap_min = c_trap_min

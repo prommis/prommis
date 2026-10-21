@@ -19,6 +19,7 @@
 # "https://github.com/watertap-org/watertap/"
 #################################################################################
 
+import os
 import pytest
 
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
@@ -39,7 +40,8 @@ def parmest_obj():
     c_trap_min = 1e-3
 
     data_name = "breakthrough_literature_data"
-    curve_file = f"data/{data_name}.csv"
+    path = os.path.dirname(os.path.realpath(__file__))
+    curve_file = os.path.join(path, "..", "data", f"{data_name}.csv")
 
     n_val = 1.00001
     kt_val = 55
@@ -67,7 +69,8 @@ def test_full_parmest_run_and_data():
     c_trap_min = 1e-3
 
     data_name = "breakthrough_literature_data"
-    curve_file = f"data/{data_name}.csv"
+    path = os.path.dirname(os.path.realpath(__file__))
+    curve_file = os.path.join(path, "..", "data", f"{data_name}.csv")
 
     parmest_data = {
         "c0_ref": {},

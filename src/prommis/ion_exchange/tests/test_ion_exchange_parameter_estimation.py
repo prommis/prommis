@@ -30,7 +30,6 @@ import pytest
 pytest.importorskip("watertap", reason="WaterTAP dependency not available")
 
 
-
 @pytest.fixture(scope="module")
 def parmest_obj():
 

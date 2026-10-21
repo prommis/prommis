@@ -69,14 +69,12 @@ and operating variables are fixed, leaving zero degrees of freedom.
 
 """
 
-import csv
 import json
 import logging
 import os
+from copy import deepcopy
 import pandas as pd
 import numpy as np
-from copy import deepcopy
-from scipy.optimize import curve_fit
 
 import pyomo.environ as pyo
 from pyomo.environ import (

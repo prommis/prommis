@@ -64,13 +64,13 @@ constant, and bed volumes at 50% breakthrough.
 
 
 def main(
-    regenerant="single_use",
-    num_traps=30,
-    c_trap_min=1e-3,
-    data_name="breakthrough_literature_data",
-    kt_val=55,
-    n_val=1.00001,
-    curve_list=[1],
+    regenerant: str = "single_use",
+    num_traps: int = 30,
+    c_trap_min: float = 1e-3,
+    data_name: str = "breakthrough_literature_data",
+    kt_val: float = 55,
+    n_val: float = 1.00001,
+    curve_list: list | None = None,
 ):
     results_parmest = []
     curve_file = f"data/{data_name}.csv"
@@ -119,8 +119,8 @@ def main(
 class IXParmest:
     def __init__(
         self,
-        theta_initial_guess=dict(),
-        fix_vars=dict(),
+        theta_initial_guess: dict | None = None,
+        fix_vars: dict | None = None,
         cb50_min_thresh=None,
         **kwargs,
     ):
@@ -761,4 +761,5 @@ def run_parmest_workflow(
 
 if __name__ == "__main__":
 
-    main()
+    curve_list = [1]
+    main(curve_list=curve_list)

@@ -119,3 +119,4 @@ Ion Exchange
    prommis.ion_exchange.ion_exchange_multicomponent
    prommis.ion_exchange.ion_exchange_multicomponent_base
    prommis.ion_exchange.ix_freundlich_multicomponent_example
+   prommis.ion_exchange.ix_parameter_estimation

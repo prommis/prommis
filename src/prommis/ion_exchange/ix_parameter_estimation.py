@@ -111,6 +111,8 @@ constant, and bed volumes at 50% breakthrough.
 
 """
 
+path = os.path.dirname(os.path.realpath(__file__))
+
 
 def main(
     regenerant: str = "single_use",
@@ -193,7 +195,6 @@ class IXParmest:
 
         """
 
-        path = os.path.dirname(os.path.realpath(__file__))
         self.curve_file = os.path.join(path, "data", f"{data_name}.csv")
 
         # Load the curve data.
@@ -213,6 +214,7 @@ class IXParmest:
 
         # Parameters related to IX
         self.resin_data = kwargs.get("resin_data")
+        self.resin_data_path = kwargs.get("resin_data_path")
         self.component_data = kwargs.get("component_data")
         self.regenerant = kwargs.get("regenerant")
         self.diff_calculation = kwargs.get("diff_calculation")
@@ -343,7 +345,7 @@ class IXParmest:
             "reactive_ions": [self.target_component],
             "number_of_trapezoids": self.num_traps,
             "minimum_concentration_trapezoids": self.c_trap_min,
-            "resin_data_path": "data/resin_data.json",
+            "resin_data_path": self.resin_data_path,
             "resin": self.resin,
         }
 
@@ -759,7 +761,6 @@ def run_parmest_workflow(
 
     input_data = df_ree[df_ree.curve == curve].copy()
 
-    path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "data", "resin_data.json")
     with open(resin_file, "r") as file:
         resin_data = json.load(file)
@@ -795,6 +796,7 @@ def run_parmest_workflow(
         num_traps=num_traps,  # number of trapezoids
         c_trap_min=c_trap_min,  # initial concentration of target component
         resin_data=resin_data,
+        resin_data_path=resin_file,
         initial_guess_dict=initial_guess_dict,
         set_bounds=set_bounds,
         component_data=component_data,

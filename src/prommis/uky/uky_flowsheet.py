@@ -313,8 +313,8 @@ def build():
 
     # Leaching property and unit models
     m.fs.coal = CoalRefuseParameters()
-    #TODO: Double check
-    #TODO: Need to make it so that include sulfates and include oxalates are both required or optional
+    # TODO: Double check
+    # TODO: Need to make it so that include sulfates and include oxalates are both required or optional
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock(
         aqueous_aliases=get_aliases(include_sulfates=True)
     )
@@ -365,9 +365,7 @@ def build():
     # ----------------------------------------------------------------------------------------------------------------
     # Solvent extraction property, reaction and unit models
     m.fs.prop_o = REESolExOgParameters()
-    m.fs.reaxn = SolventExtractionReactions(
-        aqueous_aliases=get_aliases()
-    )
+    m.fs.reaxn = SolventExtractionReactions(aqueous_aliases=get_aliases())
 
     m.fs.rougher_org_make_up = Feed(property_package=m.fs.prop_o)
 
@@ -803,11 +801,11 @@ def set_scaling(m):
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
     # These are the default scaling factors set by iscale in mixed_acid_properties
-    leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1 #1e-2
+    leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1  # 1e-2
     leach_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     leach_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
-    precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1 # 1e0 or 1e1
+    precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1  # 1e0 or 1e1
     precip_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     precip_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
 
@@ -1312,16 +1310,24 @@ def initialize_system(m):
             state = blk.mscontactor.liquid_inlet_state[s]
             state.conc_mass_comp["H2O"].set_value(1e6)
             for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(state.flow_mol_comp[j], state.flow_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
+                )
             for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
+                )
         for t, s in blk.mscontactor.liquid:
             state = blk.mscontactor.liquid[t, s]
             state.conc_mass_comp["H2O"].set_value(1e6)
             for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(state.flow_mol_comp[j], state.flow_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
+                )
             for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
+                )
         for t, s in m.fs.leach.mscontactor.liquid:
             state = m.fs.leach.mscontactor.liquid[t, s]
             calculate_variable_from_constraint(
@@ -1334,7 +1340,7 @@ def initialize_system(m):
         for phase in ("liquid", "solid"):
             inlet = getattr(mc, f"{phase}_inlet_state")
             stages = getattr(mc, phase)
-            for (t, s) in stages:
+            for t, s in stages:
                 src = inlet[t]
                 dst = stages[t, s]
                 dst_vars = dst.define_state_vars()
@@ -1344,12 +1350,16 @@ def initialize_system(m):
                         dvar[idx].set_value(value(svar[idx]))
 
         # derived liquid properties, consistent with the copied mass concentrations
-        for (t, s) in mc.liquid:
+        for t, s in mc.liquid:
             state = mc.liquid[t, s]
             for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(state.conc_mol_comp[j], state.conc_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
+                )
             for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(state.flow_mol_comp[j], state.flow_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
+                )
 
     from pyomo.environ import value
     from pyomo.util.calc_var_value import calculate_variable_from_constraint
@@ -1364,16 +1374,26 @@ def initialize_system(m):
 
             # inlet derived properties (conc_mol_comp, flow_mol_comp)
             for j in prop_aq.component_list:
-                calculate_variable_from_constraint(pin.conc_mol_comp[j], pin.conc_mol_comp_eqn[j])
-                calculate_variable_from_constraint(pin.flow_mol_comp[j], pin.flow_mol_comp_eqn[j])
+                calculate_variable_from_constraint(
+                    pin.conc_mol_comp[j], pin.conc_mol_comp_eqn[j]
+                )
+                calculate_variable_from_constraint(
+                    pin.flow_mol_comp[j], pin.flow_mol_comp_eqn[j]
+                )
 
             # outlet: same volume, depleted by the fixed splits (stay above the 1e-20 bound)
             pout.flow_vol.set_value(value(pin.flow_vol))
             for j in prop_aq.component_list:
                 frac = 1.0 if j == "H2O" else 1 - value(prop_aq.split[j]) / 100
-                pout.conc_mass_comp[j].set_value(max(value(pin.conc_mass_comp[j]) * frac, 1e-20))
-                calculate_variable_from_constraint(pout.conc_mol_comp[j], pout.conc_mol_comp_eqn[j])
-                calculate_variable_from_constraint(pout.flow_mol_comp[j], pout.flow_mol_comp_eqn[j])
+                pout.conc_mass_comp[j].set_value(
+                    max(value(pin.conc_mass_comp[j]) * frac, 1e-20)
+                )
+                calculate_variable_from_constraint(
+                    pout.conc_mol_comp[j], pout.conc_mol_comp_eqn[j]
+                )
+                calculate_variable_from_constraint(
+                    pout.flow_mol_comp[j], pout.flow_mol_comp_eqn[j]
+                )
 
             # precipitate from the generation equation
             for j in prop_s.component_list:
@@ -1429,8 +1449,12 @@ def initialize_system(m):
             m.fs.precipitator.aqueous_inlet.temperature.fix()
             m.fs.precipitator.aqueous_inlet.pressure.fix()
 
-            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["HC2O4_-"].unfix()
-            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp["C2O4_2-"].unfix()
+            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp[
+                "HC2O4_-"
+            ].unfix()
+            m.fs.precipitator.cv_aqueous.properties_in[0].conc_mass_comp[
+                "C2O4_2-"
+            ].unfix()
 
             initialize_precipitator(unit)
 
@@ -1505,7 +1529,17 @@ def fix_organic_recycle(m):
 
 def add_result_expressions(m):
     fs = m.fs
-    ree_list = ["Sc_3+", "Y_3+", "La_3+", "Ce_3+", "Pr_3+", "Nd_3+", "Sm_3+", "Gd_3+", "Dy_3+"]
+    ree_list = [
+        "Sc_3+",
+        "Y_3+",
+        "La_3+",
+        "Ce_3+",
+        "Pr_3+",
+        "Nd_3+",
+        "Sm_3+",
+        "Gd_3+",
+        "Dy_3+",
+    ]
     gangue_list = ["Al_3+", "Fe_3+", "Ca_2+"]
     fs.ree_set = Set(initialize=ree_list)
     fs.gangue_set = Set(initialize=gangue_list)
@@ -3024,9 +3058,12 @@ def optimize_model(m):
     @m.fs.leach_liquid_feed.Constraint(m.fs.time)
     def HSO4_dissociation(b, t):
         return (
-            b.properties[t].params.k_eq["H2SO4_Ka2"] * b.properties[t].conc_mol_comp["HSO4_-"]
-            == b.properties[t].conc_mol_comp["SO4_2-"] * b.properties[t].conc_mol_comp["H_+"]
+            b.properties[t].params.k_eq["H2SO4_Ka2"]
+            * b.properties[t].conc_mol_comp["HSO4_-"]
+            == b.properties[t].conc_mol_comp["SO4_2-"]
+            * b.properties[t].conc_mol_comp["H_+"]
         )
+
     #
     # sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
     # for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
@@ -3126,5 +3163,5 @@ if __name__ == "__main__":
     optimize_model(m)
     # data_reconciliation(m)
 
-    #TODO: The flowsheet is working wih get_aliases, but there's a bug with the roaster unit model
+    # TODO: The flowsheet is working wih get_aliases, but there's a bug with the roaster unit model
     # Need to use Claude to fix the unit model, then I need to carry over those changes to the roaster PR & update tests

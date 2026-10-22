@@ -181,6 +181,7 @@ class TranslatorSXLeachData(TranslatorData):
                 "Cl_-",
             ]
         )
+
         @self.Constraint(
             self.flowsheet().time,
             self.shared_components,
@@ -193,16 +194,14 @@ class TranslatorSXLeachData(TranslatorData):
             )
 
         self.sulfate_components = Set(initialize=["HSO4_-", "SO4_2-"])
+
         @self.Constraint(
             self.flowsheet().time,
             self.sulfate_components,
             doc="Defines mass concentration for the sulfate components",
         )
         def conc_mass_comp_sulfate_eqn(blk, t, i):
-            return (
-                blk.properties_out[t].conc_mass_comp[i]
-                == blk.eps_conc_mass
-            )
+            return blk.properties_out[t].conc_mass_comp[i] == blk.eps_conc_mass
 
         @self.Constraint(
             self.flowsheet().time,

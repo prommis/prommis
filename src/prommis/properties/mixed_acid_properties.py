@@ -195,7 +195,7 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
                 model.pH_phase["liquid"], overwrite=overwrite
             )
 
-        #TODO: Revisit how conc_mol_comp and flow_mol_comp are scaled
+        # TODO: Revisit how conc_mol_comp and flow_mol_comp are scaled
 
         # for idx, vardata in model.conc_mol_comp.items():
         #     self.scale_variable_by_definition_constraint(
@@ -386,25 +386,31 @@ class MixedAcidParameterData(PhysicalParameterBlock):
         }
 
         if self.config.include_oxalates:
-            split.update({
-                "H2C2O4": 1e-20,
-                "HC2O4_-": 1e-20,
-                "C2O4_2-": 1e-20,
-            })
+            split.update(
+                {
+                    "H2C2O4": 1e-20,
+                    "HC2O4_-": 1e-20,
+                    "C2O4_2-": 1e-20,
+                }
+            )
 
         elif self.config.include_sulfates:
-            split.update({
-                "HSO4_-": 1e-20,
-                "SO4_2-": 1e-20,
-            })
+            split.update(
+                {
+                    "HSO4_-": 1e-20,
+                    "SO4_2-": 1e-20,
+                }
+            )
 
         elif self.config.include_ascorbates:
-            split.update({
-                "HAsc-": 1e-20,
-                "Asc_-": 1e-20,
-                "HDha": 1e-20,
-                "Dha_-": 1e-20,
-            })
+            split.update(
+                {
+                    "HAsc-": 1e-20,
+                    "Asc_-": 1e-20,
+                    "HDha": 1e-20,
+                    "Dha_-": 1e-20,
+                }
+            )
 
         self.split = Param(
             self.component_list,
@@ -426,7 +432,7 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "SO4_2-")] = 1
-            k_eq_dict["H2SO4_Ka2"] = 10 ** -1.99 * units.mol / units.L
+            k_eq_dict["H2SO4_Ka2"] = 10**-1.99 * units.mol / units.L
 
         if self.config.include_oxalates:
             # First hydrogen

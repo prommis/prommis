@@ -195,6 +195,7 @@ class TranslatorSXPrecipData(TranslatorData):
                 "Cl_-",
             ]
         )
+
         @self.Constraint(
             self.flowsheet().time,
             self.shared_components,
@@ -212,8 +213,7 @@ class TranslatorSXPrecipData(TranslatorData):
         )
         def conc_mass_comp_oxalate_eqn(blk, t):
             return (
-                blk.properties_out[t].conc_mass_comp["H2C2O4"]
-                == blk.oxalic_acid_feed
+                blk.properties_out[t].conc_mass_comp["H2C2O4"] == blk.oxalic_acid_feed
             )
 
         @self.Constraint(

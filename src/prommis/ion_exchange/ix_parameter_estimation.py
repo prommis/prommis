@@ -759,6 +759,7 @@ def run_parmest_workflow(
 
     input_data = df_ree[df_ree.curve == curve].copy()
 
+    path = os.path.dirname(os.path.realpath(__file__))
     resin_file = os.path.join(path, "data", "resin_data.json")
     with open(resin_file, "r") as file:
         resin_data = json.load(file)

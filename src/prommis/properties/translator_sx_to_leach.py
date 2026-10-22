@@ -33,7 +33,7 @@ Additional constraints
 """
 
 from pyomo.common.config import ConfigValue, In
-from pyomo.environ import Set, Param, value, units as pyunits
+from pyomo.environ import Set, Param, units as pyunits
 
 # Import IDAES cores
 from idaes.core import declare_process_block_class

@@ -313,8 +313,6 @@ def build():
 
     # Leaching property and unit models
     m.fs.coal = CoalRefuseParameters()
-    # TODO: Double check
-    # TODO: Need to make it so that include sulfates and include oxalates are both required or optional
     m.fs.leach_rxns = CoalRefuseLeachingReactionParameterBlock(
         aqueous_aliases=get_aliases(include_sulfates=True)
     )
@@ -3163,5 +3161,3 @@ if __name__ == "__main__":
     optimize_model(m)
     # data_reconciliation(m)
 
-    # TODO: The flowsheet is working wih get_aliases, but there's a bug with the roaster unit model
-    # Need to use Claude to fix the unit model, then I need to carry over those changes to the roaster PR & update tests

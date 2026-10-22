@@ -34,6 +34,7 @@ Additional constraints
 
 from pyomo.common.config import ConfigValue, In
 from pyomo.environ import Set
+
 # Import IDAES cores
 from idaes.core import declare_process_block_class
 from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase

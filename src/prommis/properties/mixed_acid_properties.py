@@ -195,19 +195,8 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
                 model.pH_phase["liquid"], overwrite=overwrite
             )
 
-        # TODO: Revisit how conc_mol_comp and flow_mol_comp are scaled
-
-        # for idx, vardata in model.conc_mol_comp.items():
-        #     self.scale_variable_by_definition_constraint(
-        #         vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
-        #     )
         for idx, var in model.conc_mol_comp.items():
             self.scale_variable_by_default(var, overwrite=overwrite)
-
-        # for idx, vardata in model.flow_mol_comp.items():
-        #     self.scale_variable_by_definition_constraint(
-        #         vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
-        #     )
 
         for idx, var in model.flow_mol_comp.items():
             self.scale_variable_by_default(var, overwrite=overwrite)

@@ -229,20 +229,3 @@ class TranslatorSXPrecipData(TranslatorData):
         )
         def eq_pressure_rule(blk, t):
             return blk.properties_out[t].pressure == blk.properties_in[t].pressure
-
-        # self.near_zero_components = Set(
-        #     initialize=[
-        #         "C2O4_2-",
-        #         "HC2O4_-",
-        #     ]
-        # )
-        # @self.Constraint(
-        #     self.flowsheet().time,
-        #     self.near_zero_components,
-        #     doc="Defines mass concentration for the oxalate components",
-        # )
-        # def conc_mass_comp_oxalate_species_eqn(blk, t, i):
-        #     return (
-        #         blk.properties_out[t].conc_mass_comp[i]
-        #         == blk.eps
-        #     )

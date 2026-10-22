@@ -8,7 +8,7 @@
 Tests the two-salt diafiltration flowsheet
 """
 
-from idaes.core.util.model_diagnostics import DiagnosticsToolbox
+from idaes.core.util import DiagnosticsToolbox
 from idaes.core.util.testing import assert_solution_equivalent
 from idaes.models.unit_models import Feed, Product
 
@@ -29,7 +29,6 @@ def test_main():
         overall_results_plot,
         boundary_layer_results_plot,
         membrane_results_plot,
-        rejection_plot,
     ) = main()
     dt = DiagnosticsToolbox(m)
     dt.assert_no_numerical_warnings()
@@ -48,7 +47,6 @@ def test_main():
     assert m.fs.membrane.total_module_length.fixed
     assert m.fs.membrane.total_membrane_length.fixed
     for t in m.fs.membrane.time:
-        assert m.fs.membrane.applied_pressure[t].fixed
         assert m.fs.membrane.feed_flow_volume[t].fixed
         assert m.fs.membrane.diafiltrate_flow_volume[t].fixed
         for j in m.fs.membrane.solutes:
@@ -59,20 +57,20 @@ def test_main():
     assert isinstance(overall_results_plot, plt.Figure)
     assert isinstance(boundary_layer_results_plot, plt.Figure)
     assert isinstance(membrane_results_plot, plt.Figure)
-    assert isinstance(rejection_plot, plt.Figure)
 
     test_dict = {
-        "retentate_flow_volume": {(0, 1): (6.0854, 1e-4, None)},
+        "applied_pressure": {(0): (11.356, 1e-4, None)},
+        "retentate_flow_volume": {(0, 1): (12.970, 1e-4, None)},
         "retentate_conc_mol_comp": {
-            (0, 1, "Li"): (190.89, 1e-4, None),
-            (0, 1, "Co"): (239.83, 1e-4, None),
-            (0, 1, "Cl"): (670.55, 1e-4, None),
+            (0, 1, "Li"): (162.79, 1e-4, None),
+            (0, 1, "Co"): (177.57, 1e-4, None),
+            (0, 1, "Cl"): (517.93, 1e-4, None),
         },
-        "permeate_flow_volume": {(0, 1): (10.035, 1e-4, None)},
-        "permeate_conc_mol_comp": {
-            (0, 1, "Li"): (191.70, 1e-4, None),
-            (0, 1, "Co"): (222.48, 1e-4, None),
-            (0, 1, "Cl"): (636.67, 1e-4, None),
+        "permeate_outlet_flow": {(0): (3.2800, 1e-4, None)},
+        "permeate_outlet_conc_mol_comp": {
+            (0, "Li"): (135.05, 1e-4, None),
+            (0, "Co"): (65.776, 1e-4, None),
+            (0, "Cl"): (266.61, 1e-4, None),
         },
     }
 

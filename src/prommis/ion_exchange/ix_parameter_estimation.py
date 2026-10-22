@@ -759,10 +759,12 @@ def run_parmest_workflow(
 
     input_data = df_ree[df_ree.curve == curve].copy()
 
-    with open("data/resin_data.json", "r") as file:
+    resin_file = os.path.join(path, "data", "resin_data.json")
+    with open(resin_file, "r") as file:
         resin_data = json.load(file)
 
-    with open("data/properties_data.json") as data_file:
+    comp_prop_file = os.path.join(path, "data", "properties_data.json")
+    with open(comp_prop_file) as data_file:
         species_props = json.load(data_file)
 
     species = input_data.compound.iloc[0]

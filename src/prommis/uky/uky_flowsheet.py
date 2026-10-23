@@ -164,8 +164,9 @@ from pyomo.environ import (
 )
 from pyomo.network import Arc, SequentialDecomposition
 from pyomo.util.subsystems import create_subsystem_block
-
+from pyomo.util.calc_var_value import calculate_variable_from_constraint
 import idaes.logger as idaeslog
+from idaes.core.util.model_statistics import large_residuals_set
 from idaes.core import (
     FlowDirection,
     FlowsheetBlock,
@@ -178,7 +179,6 @@ from idaes.core import (
 from idaes.core.initialization import BlockTriangularizationInitializer
 from idaes.core.scaling import ConstraintScalingScheme, CustomScalerBase
 from idaes.core.solvers import get_solver
-from idaes.core.util.diagnostics_tools import DiagnosticsToolbox
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
@@ -255,25 +255,11 @@ def main():
 
     solve_system(m, tee=True)
 
-    print("Initialized tear guesses after 1st solve")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
-
     # fixes the volumetric flow rate of the organic recycle streams and unfixes the flow of the make-up streams
     # we want to be able to adjust the total recycle flow rate, not just the make-up portion of it
     fix_organic_recycle(m)
 
     results = solve_system(m, tee=True)
-
-    print("Initialized tear guesses after 2nd solve")
-    m.fs.leach.liquid_inlet.display()
-    m.fs.solex_rougher_load.organic_inlet.display()
-    m.fs.solex_rougher_load.aqueous_inlet.display()
-    m.fs.solex_cleaner_load.organic_inlet.display()
-    m.fs.solex_cleaner_load.aqueous_inlet.display()
 
     if not check_optimal_termination(results):
         raise RuntimeError(
@@ -286,13 +272,7 @@ def main():
     add_costing(m)
     initialize_costing(m)
 
-    # diagnostics, initialize, and solve
-    dt = DiagnosticsToolbox(m)
-    # dt.assert_no_structural_warnings()
-
     solve_system(m, tee=True)
-
-    # dt.assert_no_numerical_warnings()
 
     display_costing(m)
 
@@ -795,7 +775,6 @@ def set_scaling(m):
     sx_properties_scaler = m.fs.sx_soln.default_state_scaler_class()
     organic_properties_scaler = m.fs.prop_o.default_state_scaler_class()
     precip_properties_scaler = m.fs.precip_soln.default_state_scaler_class()
-    # solid_properties_scaler = m.fs.properties_solid.default_state_scaler_class()
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
     # These are the default scaling factors set by iscale in mixed_acid_properties
@@ -817,7 +796,6 @@ def set_scaling(m):
     m.fs.sx_soln.default_state_scaler_object = leach_properties_scaler
     m.fs.prop_o.default_state_scaler_object = organic_properties_scaler
     m.fs.precip_soln.default_state_scaler_object = precip_properties_scaler
-    # m.fs.properties_solid.default_state_scaler_object = solid_properties_scaler
     m.fs.prop_gas.default_state_scaler_object = vapor_properties_scaler
 
     # Also use global mutation to change the max and min scaling factors
@@ -1283,6 +1261,7 @@ def initialize_system(m):
 
     initializer_bt = BlockTriangularizationInitializer()
 
+    # seed_unset_vars, initialize_leaching, and initialize precipitator were written with the help of AI
     def seed_unset_vars(blk, default=1.0):
         """Give every uninitialized Var in blk a placeholder value so residual
         diagnostics can run without crashing on None. Not physically meaningful
@@ -1296,44 +1275,7 @@ def initialize_system(m):
                 count += 1
         print(f"seeded {count} previously-uninitialized variables")
 
-    def seed_leach_liquid_states(blk):
-        """Seed conc_mass_comp[H2O] and flow_mol_comp for the inlet and every
-        internal stage of an MSContactor liquid phase, since neither the raw
-        Pyomo default nor the property package's own initialize= guess gets
-        these anywhere near their converged values, and h2o_concentration_eqn/
-        flow_mol_comp_eqn are local per-stage relations that a single seed at
-        the inlet doesn't propagate forward.
-        """
-        for s in blk.mscontactor.liquid_inlet_state:
-            state = blk.mscontactor.liquid_inlet_state[s]
-            state.conc_mass_comp["H2O"].set_value(1e6)
-            for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(
-                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
-                )
-            for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(
-                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
-                )
-        for t, s in blk.mscontactor.liquid:
-            state = blk.mscontactor.liquid[t, s]
-            state.conc_mass_comp["H2O"].set_value(1e6)
-            for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(
-                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
-                )
-            for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(
-                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
-                )
-        for t, s in m.fs.leach.mscontactor.liquid:
-            state = m.fs.leach.mscontactor.liquid[t, s]
-            calculate_variable_from_constraint(
-                state.conc_mol_comp["HSO4_-"],
-                state.inherent_equilibrium_eqn["H2SO4_Ka2"],
-            )
-
-    def seed_leach_stages_from_inlet(blk):
+    def initialize_leaching(blk):
         mc = blk.mscontactor
         for phase in ("liquid", "solid"):
             inlet = getattr(mc, f"{phase}_inlet_state")
@@ -1358,10 +1300,6 @@ def initialize_system(m):
                 calculate_variable_from_constraint(
                     state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
                 )
-
-    from pyomo.environ import value
-    from pyomo.util.calc_var_value import calculate_variable_from_constraint
-    from idaes.core.util.model_statistics import large_residuals_set
 
     def initialize_precipitator(unit):
         prop_aq = unit.config.property_package_aqueous
@@ -1400,11 +1338,6 @@ def initialize_system(m):
                     unit.precipitate_generation[t, j],
                 )
 
-        bad = large_residuals_set(unit, tol=1e-6)
-        print(f"{unit.name}: {len(bad)} constraints with residual > 1e-6")
-        for c in list(bad)[:15]:
-            print("   ", c.name)
-
     def function(unit):
         if unit in feed_units:
             _log.info(f"Initializing {unit}")
@@ -1424,7 +1357,7 @@ def initialize_system(m):
                 m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
             for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
                 m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
-            seed_leach_stages_from_inlet(m.fs.leach)
+            initialize_leaching(m.fs.leach)
 
             solver = get_solver()
             solver.options["bound_relax_factor"] = 0
@@ -1499,10 +1432,9 @@ def solve_system(m, solver_obj=None, tee=False):
     if solver_obj is None:
         # Why isn't it getting ipopt_v2 automatically?
         solver_obj = get_solver("ipopt_v2")
-    solver_obj.options.constr_viol_tol = 1e-6
+    solver_obj.options.constr_viol_tol = 1e-8
     solver_obj.options["nlp_scaling_method"] = "user-scaling"
     solver_obj.options["bound_relax_factor"] = 0
-    solver_obj.options["max_iter"] = 300
 
     results = solver_obj.solve(m, tee=tee)
 
@@ -3160,3 +3092,5 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
+
+    #TODO: Need to add scaling to costing to stabilize the solve

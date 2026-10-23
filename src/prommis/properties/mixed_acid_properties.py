@@ -152,12 +152,12 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         "conc_mass_comp[Na_+]": 1e-3,
         "conc_mass_comp[Cl_-]": 1e-3,
         # Sulfates
-        "conc_mass_comp[SO4_2-]": 1e-2,
+        "conc_mass_comp[SO4_2-]": 1e-3,
         "conc_mass_comp[HSO4_-]": 1e-3,
         # TODO revisit oxalate concentration defaults
         # in precipitation PR
         "conc_mass_comp[H2C2O4]": 1e-3,
-        "conc_mass_comp[HC2O4_-]": 1e-3,
+        "conc_mass_comp[HC2O4_-]": 1e-2,
         "conc_mass_comp[C2O4_2-]": 1e-3,
         # TODO revisit ascorbate concentration values later
         "conc_mass_comp[HAsc]": 1,
@@ -168,6 +168,8 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         # to encourage the solver to take
         # smaller steps
         "pH_phase": 10,
+        "conc_mol_comp": 1e5,
+        "flow_mol_comp": 1e3,
     }
     for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
@@ -192,15 +194,12 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
             self.scale_variable_by_default(
                 model.pH_phase["liquid"], overwrite=overwrite
             )
-        for idx, vardata in model.conc_mol_comp.items():
-            self.scale_variable_by_definition_constraint(
-                vardata, model.conc_mol_comp_eqn[idx], overwrite=overwrite
-            )
 
-        for idx, vardata in model.flow_mol_comp.items():
-            self.scale_variable_by_definition_constraint(
-                vardata, model.flow_mol_comp_eqn[idx], overwrite=overwrite
-            )
+        for idx, var in model.conc_mol_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
+
+        for idx, var in model.flow_mol_comp.items():
+            self.scale_variable_by_default(var, overwrite=overwrite)
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -354,6 +353,60 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             initialize=mw_init,
         )
 
+        # Split fractions for the precipitator
+        # parameter based on pH 1.28
+        # TODO add surrogate model/equation
+        split = {
+            "H2O": 1e-20,
+            "Sc_3+": 31.61,
+            "Y_3+": 74.46,
+            "La_3+": 51.51,
+            "Ce_3+": 68.07,
+            "Pr_3+": 78,
+            "Nd_3+": 81.55,
+            "Sm_3+": 87.35,
+            "Gd_3+": 88.01,
+            "Dy_3+": 87.16,
+            "Al_3+": 0.9,
+            "Ca_2+": 20.50,
+            "Fe_3+": 2.44,
+            "H_+": 1e-20,
+            "Cl_-": 1e-20,
+        }
+
+        if self.config.include_oxalates:
+            split.update(
+                {
+                    "H2C2O4": 1e-20,
+                    "HC2O4_-": 1e-20,
+                    "C2O4_2-": 1e-20,
+                }
+            )
+
+        elif self.config.include_sulfates:
+            split.update(
+                {
+                    "HSO4_-": 1e-20,
+                    "SO4_2-": 1e-20,
+                }
+            )
+
+        elif self.config.include_ascorbates:
+            split.update(
+                {
+                    "HAsc-": 1e-20,
+                    "Asc_-": 1e-20,
+                    "HDha": 1e-20,
+                    "Dha_-": 1e-20,
+                }
+            )
+
+        self.split = Param(
+            self.component_list,
+            units=units.kg / units.kg,
+            initialize=split,
+        )
+
         if (
             self.config.include_sulfates
             or self.config.include_oxalates
@@ -364,7 +417,6 @@ class MixedAcidParameterData(PhysicalParameterBlock):
             self.inherent_reaction_stoichiometry = {}
             k_eq_dict = {}
         if self.config.include_sulfates:
-            # Inherent reaction for partial dissociation of HSO4
             inherent_reaction_idx.append("H2SO4_Ka2")
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "H_+")] = 1
             self.inherent_reaction_stoichiometry[("H2SO4_Ka2", "liquid", "HSO4_-")] = -1
@@ -555,7 +607,6 @@ class MixedAcidStateBlockData(StateBlockData):
             initialize=1e-5,
             bounds=(1e-20, None),
         )
-
         self.temperature = Var(
             domain=Reals,
             initialize=298.15,

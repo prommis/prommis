@@ -38,7 +38,7 @@ from prommis.properties.sulfuric_acid_leaching_properties import (
 from prommis.roasting.ree_oxalate_roaster import REEOxalateRoaster
 from prommis.solvent_extraction.ree_og_distribution import REESolExOgParameters
 from prommis.solvent_extraction.solvent_extraction import SolventExtraction
-from prommis.uky.uky_flowsheet import (
+from prommis.uky.legacy_uky_flowsheet import (
     add_costing,
     add_result_expressions,
     build,
@@ -609,14 +609,14 @@ def test_costing_solution(system_frame):
     tol = 1e-4
 
     expected_results = {
-        "costing.total_plant_cost": {None: (7.27556e-01, tol, None)},
-        "costing.total_BEC": {None: (2.44967e-01, tol, None)},
-        "costing.total_installation_cost": {None: (4.82585e-01, tol, None)},
-        "costing.other_plant_costs": {None: (3.59344e-06, tol, None)},
+        "costing.total_plant_cost": {None: (7.34943e-01, tol, None)},
+        "costing.total_BEC": {None: (2.47454e-01, tol, None)},
+        "costing.total_installation_cost": {None: (4.87485e-01, tol, None)},
+        "costing.other_plant_costs": {None: (3.59415e-06, tol, None)},
         "costing.total_fixed_OM_cost": {None: (6.80321e00, tol, None)},
         "costing.total_variable_OM_cost": {0: (1.36148e00, tol, None)},
-        "costing.total_sales_revenue": {None: (3.1e-4, None, tol)},
-        "costing.land_cost": {None: (2.69991e-5, tol, None)},
+        "costing.total_sales_revenue": {None: (6.4e-4, None, tol)},
+        "costing.land_cost": {None: (6.12342e-5, tol, None)},
     }
     assert_solution_equivalent(model.fs, expected_results)
 

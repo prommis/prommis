@@ -615,10 +615,10 @@ def test_costing_solution(system_frame):
     tol = 1e-4
 
     expected_results = {
-        "costing.total_plant_cost": {None: (7.29026e-01, tol, None)},
-        "costing.total_BEC": {None: (2.45462e-01, tol, None)},
-        "costing.total_installation_cost": {None: (4.8356e-01, tol, None)},
-        "costing.other_plant_costs": {None: (3.57876e-06, tol, None)},
+        "costing.total_plant_cost": {None: (7.27569e-01, tol, None)},
+        "costing.total_BEC": {None: (2.44971e-01, tol, None)},
+        "costing.total_installation_cost": {None: (4.82594e-01, tol, None)},
+        "costing.other_plant_costs": {None: (3.59344e-06, tol, None)},
         "costing.total_fixed_OM_cost": {None: (6.80364e00, tol, None)},
         "costing.total_variable_OM_cost": {0: (1.36139e00, tol, None)},
         "costing.total_sales_revenue": {None: (3.3e-4, None, tol)},

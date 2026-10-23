@@ -278,6 +278,7 @@ def main():
     report_scaling_factors(m, descend_into=True)
 
     import idaes.core.util.scaling as iscale
+
     # Custom scaling visualization tools
     badly_scaled_var_list = iscale.badly_scaled_var_generator(m, large=1e2, small=1e-2)
     print("----------------   Badly Scaled Vars   ----------------")
@@ -2014,7 +2015,7 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.leach_pump.costing.bare_erected_cost['4.4'], 1e-2)
+    set_scaling_factor(m.fs.leach_pump.costing.bare_erected_cost["4.4"], 1e-2)
 
     # 4.5 is UKy Leaching - Thickener
     L_thickener_accounts = ["4.5"]
@@ -2121,7 +2122,9 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.leach_solution_heater.costing.bare_erected_cost['4.8'], 1e-1)
+    set_scaling_factor(
+        m.fs.leach_solution_heater.costing.bare_erected_cost["4.8"], 1e-1
+    )
 
     # Solvent extraction costs
     # 5.1 is UKy Rougher Solvent Extraction - Polyethylene Tanks
@@ -2160,7 +2163,7 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.rougher_solex_tank.costing.bare_erected_cost['5.1'], 1e-1)
+    set_scaling_factor(m.fs.rougher_solex_tank.costing.bare_erected_cost["5.1"], 1e-1)
 
     # 5.2 is UKy Rougher Solvent Extraction - Tank Mixer
     RSX_tank_mixer_accounts = ["5.2"]
@@ -2212,8 +2215,7 @@ def add_costing(m):
             "CE_index_year": CE_index_year,
         },
     )
-    set_scaling_factor(m.fs.rougher_pump.costing.bare_erected_cost['5.3'], 1e-2)
-
+    set_scaling_factor(m.fs.rougher_pump.costing.bare_erected_cost["5.3"], 1e-2)
 
     # 5.4 is UKy Rougher Solvent Extraction - Mixer Settler
     RSX_mixer_settler_accounts = ["5.4"]
@@ -2251,7 +2253,9 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.rougher_solex_settler.costing.bare_erected_cost['5.4'], 1e-3)
+    set_scaling_factor(
+        m.fs.rougher_solex_settler.costing.bare_erected_cost["5.4"], 1e-3
+    )
 
     # 6.1 is UKy Cleaner Solvent Extraction - Polyethylene Tanks
     CSX_pe_tanks_accounts = ["6.1"]
@@ -2340,7 +2344,7 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.cleaner_pump.costing.bare_erected_cost['6.3'], 1e-1)
+    set_scaling_factor(m.fs.cleaner_pump.costing.bare_erected_cost["6.3"], 1e-1)
 
     # 6.4 is UKy Cleaner Solvent Extraction - Mixer Settler
     CSX_mixer_settler_accounts = ["6.4"]
@@ -2378,7 +2382,9 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.cleaner_solex_settler.costing.bare_erected_cost['6.4'], 1e-2)
+    set_scaling_factor(
+        m.fs.cleaner_solex_settler.costing.bare_erected_cost["6.4"], 1e-2
+    )
 
     # Precipitation costs
     # 10.1 is UKy Oxalate Precipitation - Polyethylene Tanks
@@ -2451,7 +2457,7 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.precipitator_mixer.costing.bare_erected_cost['10.2'], 1e-1)
+    set_scaling_factor(m.fs.precipitator_mixer.costing.bare_erected_cost["10.2"], 1e-1)
 
     # 10.3 is UKy Oxalate Precipitation - Process Pump
     reep_pump_accounts = ["10.3"]
@@ -2469,7 +2475,7 @@ def add_costing(m):
         },
     )
 
-    set_scaling_factor(m.fs.precipitator_pump.costing.bare_erected_cost['10.3'], 1e-2)
+    set_scaling_factor(m.fs.precipitator_pump.costing.bare_erected_cost["10.3"], 1e-2)
 
     # 10.4 is UKy Oxalate Precipitation - Filter Press
     reep_filter_press_accounts = ["10.4"]
@@ -3123,4 +3129,4 @@ if __name__ == "__main__":
     optimize_model(m)
     # data_reconciliation(m)
 
-    #TODO: Need to add scaling to costing to stabilize the solve
+    # TODO: Need to add scaling to costing to stabilize the solve

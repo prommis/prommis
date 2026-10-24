@@ -243,6 +243,20 @@ def report_values(m, prec=True):
             pyo.value(m.fs.precipitator["retentate"].volume),
             pyo.value(m.fs.precipitator["permeate"].volume),
         ]
+        print("\nconc. step recycle")
+        data["conc step recycle"] = [pyo.value(m.fs.precipitator["retentate"].yields["solvent", "recycle"]), pyo.value(m.fs.precipitator["permeate"].yields["solvent", "recycle"])]
+        m.fs.precipitator["retentate"].yields["solvent", "recycle"].pprint()
+        m.fs.precipitator["permeate"].yields["solvent", "recycle"].pprint()
+        print("\nbypass recycle")
+        data["bypass recycle"] = [pyo.value(m.fs.precipitator["retentate"].split_inlet["bypass"]), pyo.value(m.fs.precipitator["permeate"].split_inlet["bypass"])]
+        m.fs.precipitator["retentate"].split_inlet["bypass"].pprint()
+        m.fs.precipitator["permeate"].split_inlet["bypass"].pprint()
+        print("\npump power (kW)")
+        data["pump power"] = [pyo.value(m.fs.diafiltrate_pump.costing.pump_power)/8766]
+        print(pyo.value(m.fs.diafiltrate_pump.costing.pump_power)/8766)
+        print("\ncost")
+        data["cost"] = [pyo.value(m.cost_objective)]
+        print(pyo.value(m.cost_objective))
     return data
 
 
@@ -252,7 +266,7 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
     box_size = 1  # Size of each box (width and height)
     spacing = 0.3  # Space between the boxes
     thick_line_width = 2  # Thickness of the outer box lines
-    tol = 0.001
+    tol = 0.1
     legflagret = True
     legflagperm = True
     legflagrec = True
@@ -263,7 +277,7 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
             "size": [1] * num_boxes * num_sub_boxes,
             "solutes": [1] * num_boxes * num_sub_boxes,
             "Membrane outlet recoveries": [1] * num_boxes * num_sub_boxes,
-            "Membrane Area": [1] * num_boxes * num_sub_boxes,
+            "Membrane Area": [100] * num_boxes * num_sub_boxes,
             "feed flows": [1] * num_boxes * num_sub_boxes,
             "diaf flows": [1] * num_boxes * num_sub_boxes,
             "recycle flows": [1] * num_boxes * num_sub_boxes,
@@ -878,3 +892,102 @@ def visualize_flows(num_boxes, num_sub_boxes, conf="stage", model=None):
 
     # Show the plot
     plt.show()
+
+
+def sep_dof(m, mixing, first, second):
+    """Separate model DoF into first and second stage."""
+    NS = len(m.fs.stages)
+    NT = len(m.fs.tubes)
+
+    # first stage variables
+    first_stage_variables = first
+
+    # second stage variables
+    second_stage_variables = second
+
+    if mixing == "tube":
+        for i in m.fs.stages:
+            for j in m.fs.tubes:
+                if i != NS or j != NT:
+                    # second_stage_variables.append(
+                    #     m.fs.split_feed.split_fraction[0, f'outlet_{(i-1)*NT+j}']
+                    # )
+                    # second_stage_variables.append(
+                    #     m.fs.split_diafiltrate
+                    #     .split_fraction[0, f'outlet_{(i-1)*NT+j}']
+                    # )
+                    second_stage_variables.append(
+                        getattr(m.fs.split_feed, f"outlet_{(i-1)*NT+j}").flow_vol[0]
+                    )
+                    second_stage_variables.append(
+                        getattr(
+                            m.fs.split_diafiltrate, f"outlet_{(i-1)*NT+j}"
+                        ).flow_vol[0]
+                    )
+                if j != NT:
+                    if i != 1:
+                        # second_stage_variables.append(
+                        #     m.fs.recycle_splitters[i]
+                        #     .split_fraction[0, f'outlet_{j}']
+                        # )
+                        second_stage_variables.append(
+                            getattr(m.fs.recycle_splitters[i], f"outlet_{j}").flow_vol[
+                                0
+                            ]
+                        )
+            if i != 1:
+                # second_stage_variables.append(
+                #     m.fs.split_retentate[i].split_fraction[0, 'product']
+                # )
+                second_stage_variables.append(
+                    m.fs.split_retentate[i].product.flow_vol[0]
+                )
+            if i != NS:
+                # second_stage_variables.append(
+                #     m.fs.split_permeate[i].split_fraction[0, 'product']
+                # )
+                second_stage_variables.append(
+                    m.fs.split_permeate[i].product.flow_vol[0]
+                )
+
+    elif mixing == "stage" or mixing == "simple" or mixing == "classic":
+        for i in m.fs.stages:
+            if i > 1:
+                # second_stage_variables.append(
+                #     m.fs.split_feed.split_fraction[0, f'outlet_{i}']
+                # )
+                # second_stage_variables.append(
+                #     m.fs.split_diafiltrate
+                #     .split_fraction[0, f'outlet_{i}']
+                # )
+                second_stage_variables.append(
+                    getattr(m.fs.split_feed, f"outlet_{i}").flow_vol[0]
+                )
+                second_stage_variables.append(
+                    getattr(m.fs.split_diafiltrate, f"outlet_{i}").flow_vol[0]
+                )
+            if mixing != "classic":
+                if i != 1:
+                    # second_stage_variables.append(
+                    #     m.fs.split_retentate[i].split_fraction[0, 'product']
+                    # )
+                    second_stage_variables.append(
+                        m.fs.split_retentate[i].product.flow_vol[0]
+                    )
+                if i != NS:
+                    # second_stage_variables.append(
+                    #     m.fs.split_permeate[i].split_fraction[0, 'product']
+                    # )
+                    second_stage_variables.append(
+                        m.fs.split_permeate[i].product.flow_vol[0]
+                    )
+            if mixing == "stage":
+                for j in pyo.RangeSet(NT - 1):
+                    # second_stage_variables.append(
+                    #     m.fs.splitters[i].split_fraction[0, f'outlet_{j}']
+                    # )
+                    second_stage_variables.append(
+                        getattr(m.fs.splitters[i], f"outlet_{j}").flow_vol[0]
+                    )
+
+    return first_stage_variables, second_stage_variables

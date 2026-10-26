@@ -81,7 +81,6 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     # Liquid chemical components
     comp_liq = {"H_+", "H2O", "HSO4_-", "SO4_2-"}
 
-
     # Chemical components - oxides
     comp_ox = {
         "Al2O3",

@@ -53,7 +53,6 @@ def export_to_ui():
     )
 
 
-# I think this is a better name
 flowsheet_interface = export_to_ui
 
 
@@ -65,19 +64,23 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
 
     # Chemical components
     comp = {
-        "Al",
-        "Ca",
-        "Ce",
-        "Dy",
-        "Fe",
-        "Gd",
-        "La",
-        "Nd",
-        "Pr",
-        "Sc",
-        "Sm",
-        "Y",
+        "Al_3+",
+        "Ca_2+",
+        "Ce_3+",
+        "Dy_3+",
+        "Fe_3+",
+        "Gd_3+",
+        "La_3+",
+        "Nd_3+",
+        "Pr_3+",
+        "Sc_3+",
+        "Sm_3+",
+        "Y_3+",
     }
+
+    # Liquid chemical components
+    comp_liq = {"H_+", "H2O", "HSO4_-", "SO4_2-"}
+
 
     # Chemical components - oxides
     comp_ox = {
@@ -111,9 +114,6 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
         "Y_o",
     }
 
-    # Liquid chemical components
-    comp_liq = {"H", "H2O", "HSO4", "SO4"}
-
     # Chemical components - precipitates
     comp_precip = {
         "Al2(C2O4)3(s)",
@@ -144,9 +144,9 @@ def export_variables(flowsheet=None, exports=None, build_options=None, **kwargs)
     )
     # Mass comp
     for compound, compound_name in (
-        ("H", "hydrogen"),
-        ("SO4", "SO4"),
-        ("HSO4", "HSO4"),
+        ("H_+", "hydrogen"),
+        ("SO4_2-", "SO4"),
+        ("HSO4_-", "HSO4"),
     ):
         exports.add(
             obj=llf.conc_mass_comp[0, compound],
@@ -468,18 +468,18 @@ def add_kpis(exports=None, flowsheet=None):  # pragma: no cover
         ],
     )
     element_names = {
-        "Al": "Aluminum",
-        "Ca": "Calcium",
-        "Ce": "Cerium",
-        "Dy": "Dysprosium",
-        "Fe": "Iron",
-        "Gd": "Gadolinium",
-        "La": "Lanthanum",
-        "Nd": "Neodymium",
-        "Pr": "Praseodymium",
-        "Sc": "Scandium",
-        "Sm": "Samarium",
-        "Y": "Yttrium",
+        "Al_3+": "Aluminum",
+        "Ca_2+": "Calcium",
+        "Ce_3+": "Cerium",
+        "Dy_3+": "Dysprosium",
+        "Fe_3+": "Iron",
+        "Gd_3+": "Gadolinium",
+        "La_3+": "Lanthanum",
+        "Nd_3+": "Neodymium",
+        "Pr_3+": "Praseodymium",
+        "Sc_3+": "Scandium",
+        "Sm_3+": "Samarium",
+        "Y_3+": "Yttrium",
     }
     element_values, element_labels = [], []
     for element, full_name in element_names.items():

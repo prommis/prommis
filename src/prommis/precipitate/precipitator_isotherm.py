@@ -219,7 +219,6 @@ class OxalatePrecipitatorScaler(CustomScalerBase):
             )
 
 
-
 # -----------------------------------------------------------------------------
 # Precipitator unit model
 class OxalatePrecipitatorInitializer(ModularInitializerBase):

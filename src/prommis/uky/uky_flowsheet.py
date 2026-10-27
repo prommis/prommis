@@ -1264,7 +1264,7 @@ def initialize_system(m):
     initializer_bt = BlockTriangularizationInitializer()
 
     # initialize_precipitator was written with the help of AI
-    #TODO: replace this initialization routine with an initializer for the precipitator unit model
+    # TODO: replace this initialization routine with an initializer for the precipitator unit model
     def initialize_precipitator(unit):
         prop_aq = unit.config.property_package_aqueous
         prop_s = unit.config.property_package_precipitate

@@ -241,7 +241,7 @@ class REEOxalateRoasterScaler(CustomScalerBase):
         for (t, j), vardata in model.enth_mol_comp_feed.items():
             self.set_variable_scaling_factor(
                 vardata,
-                1 / abs(value(model.enth0_oxide_list_all[j])),
+                1 / abs(value(model.enth0_oxide_list_all[model.base_metal[j]])),
                 overwrite=overwrite,
             )
 
@@ -252,7 +252,7 @@ class REEOxalateRoasterScaler(CustomScalerBase):
         for (t, j), vardata in model.enth_mol_comp_product.items():
             self.set_variable_scaling_factor(
                 vardata,
-                1 / abs(value(model.enth0_oxide_list_all[j])),
+                1 / abs(value(model.enth0_oxide_list_all[model.base_metal[j]])),
                 overwrite=overwrite,
             )
 
@@ -543,6 +543,19 @@ constructed,
         # Attributed for storing contents of reporting output
         self._stream_table_dict = {}
 
+        # Use the solid property package's component names for model indices,
+        # while keeping the roaster's built-in parameter tables keyed by base names.
+        solid_props = self.config.property_package_precipitate_solid
+        if hasattr(solid_props.config, "aqueous_aliases"):
+            aliases = solid_props.config.aqueous_aliases
+        else:
+            aliases = {i: i for i in self.config.metal_list}
+        self.base_metal = {aliases[i]: i for i in self.config.metal_list}
+        self.metal_list = Set(
+            initialize=list(self.base_metal),
+            doc="List of metals in solid feed stream",
+        )
+
         # Build Holdup Block
         # gas phase inlet stream
         self.gas_in = self.config.property_package_gas.build_state_block(
@@ -597,11 +610,6 @@ constructed,
                 units=pyunits.Pa,
                 doc="pressure drop from inlet to outlet",
             )
-
-        # metal list is a user-specified list of metals contained in the solid feed stream including impurity metals
-        self.metal_list = Set(
-            initialize=self.config.metal_list, doc="List of metals in solid feed stream"
-        )
 
         # Construct performance equations
         self._make_params()
@@ -882,11 +890,10 @@ constructed,
     def _make_mass_balance(self):
         """This section contains equations for mass balance within this model."""
 
-        # Currently the solid feed port contains anhydrous REE oxalate
-        # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed
-        reversed_react = dict(
-            map(reversed, self.config.property_package_precipitate_solid.react.items())
-        )
+        # Currently the solid feed port contains anhydrous REE oxalate.
+        # Convert solid inlet port anhydrous oxalate mol flow to flow_mol_comp_feed.
+        solid_props = self.config.property_package_precipitate_solid
+        reversed_react = dict(map(reversed, solid_props.react.items()))
 
         @self.Constraint(
             self.flowsheet().config.time,
@@ -921,7 +928,8 @@ constructed,
                     b.gas_out[t].flow_mol_comp[i]
                     == b.gas_in[t].flow_mol_comp[i]
                     + sum(
-                        b.flow_mol_comp_feed[t, j] * b.xH2O_oxalate_list_all[j]
+                        b.flow_mol_comp_feed[t, j]
+                        * b.xH2O_oxalate_list_all[b.base_metal[j]]
                         for j in b.metal_list
                     )
                     + b.flow_mol_moist_feed[t]
@@ -930,14 +938,18 @@ constructed,
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
                     i
                 ] - sum(
-                    b.xC2O4_oxalate_list_all[j] / 2 * b.flow_mol_comp_feed[t, j]
+                    b.xC2O4_oxalate_list_all[b.base_metal[j]]
+                    / 2
+                    * b.flow_mol_comp_feed[t, j]
                     for j in b.metal_list
                 )
             elif i == "CO2":
                 return b.gas_out[t].flow_mol_comp[i] == b.gas_in[t].flow_mol_comp[
                     i
                 ] + sum(
-                    b.xC2O4_oxalate_list_all[j] * 2 * b.flow_mol_comp_feed[t, j]
+                    b.xC2O4_oxalate_list_all[b.base_metal[j]]
+                    * 2
+                    * b.flow_mol_comp_feed[t, j]
                     for j in b.metal_list
                 )
             else:
@@ -970,7 +982,7 @@ constructed,
         )
         def flow_mass_product_eqn(b, t):
             return b.flow_mass_product[t] == sum(
-                b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[i]
+                b.flow_mol_comp_product[t, i] * b.mw_oxide_list_all[b.base_metal[i]]
                 for i in b.metal_list
             )
 
@@ -979,7 +991,7 @@ constructed,
         )
         def flow_mass_dust(b, t):
             return sum(
-                b.flow_mol_comp_dust[t, i] * b.mw_oxide_list_all[i]
+                b.flow_mol_comp_dust[t, i] * b.mw_oxide_list_all[b.base_metal[i]]
                 for i in b.metal_list
             )
 
@@ -991,7 +1003,7 @@ constructed,
         def mass_frac_comp_product(b, t, i):
             return (
                 b.flow_mol_comp_product[t, i]
-                * b.mw_oxide_list_all[i]
+                * b.mw_oxide_list_all[b.base_metal[i]]
                 / b.flow_mass_product[t]
             )
 
@@ -1005,11 +1017,11 @@ constructed,
         def enth_mol_comp_feed_eqn(b, t, i):
             temp = b.solid_in[t].temperature
             return b.enth_mol_comp_feed[t, i] == b.enth0_oxalate_list_all[
-                i
-            ] + b.cp0_oxalate_list_all[i] * (
+                b.base_metal[i]
+            ] + b.cp0_oxalate_list_all[b.base_metal[i]] * (
                 temp - b.temp_ref
             ) + 0.5 * b.cp1_oxalate_list_all[
-                i
+                b.base_metal[i]
             ] * (
                 temp * temp - b.temp_ref * b.temp_ref
             )
@@ -1038,11 +1050,11 @@ constructed,
         def enth_mol_comp_product_eqn(b, t, i):
             temp_prod = b.gas_out[t].temperature
             return b.enth_mol_comp_product[t, i] == b.enth0_oxide_list_all[
-                i
-            ] + b.cp0_oxide_list_all[i] * (
+                b.base_metal[i]
+            ] + b.cp0_oxide_list_all[b.base_metal[i]] * (
                 temp_prod - b.temp_ref
             ) + 0.5 * b.cp1_oxide_list_all[
-                i
+                b.base_metal[i]
             ] * (
                 temp_prod * temp_prod - b.temp_ref * b.temp_ref
             )
@@ -1163,7 +1175,9 @@ constructed,
     def _get_performance_contents(self, time_point=0):
         exprs = {}
 
-        for j in self.config.metal_list:
+        # Use the same (possibly aliased) component names as the model's
+        # mass-fraction expression index.
+        for j in self.metal_list:
             exprs[f"Product {j} Mass Fraction"] = self.mass_frac_comp_product[
                 time_point, j
             ]

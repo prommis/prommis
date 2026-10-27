@@ -794,14 +794,17 @@ def set_scaling(m):
     leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     leach_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     leach_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
+    leach_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
 
     precip_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     precip_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     precip_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
+    precip_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
 
     sx_properties_scaler.default_scaling_factors["flow_vol"] = 1e0
     sx_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     sx_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
+    sx_properties_scaler.default_scaling_factors["flow_mol_comp"] = 1e3
 
     vapor_properties_scaler.default_scaling_factors["flow_mol_phase"] = 1 / 0.00781
 

@@ -209,7 +209,7 @@ class Test_Solvent_Extraction_steady_model:
                     8.4210e12, rel=1e-3
                 )
                 assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    1.3238e7, rel=1e-3
+                    1.68208e16, rel=1e-3
                 )
             else:
                 assert jacobian_cond(model, scaled=False) == pytest.approx(
@@ -224,7 +224,7 @@ class Test_Solvent_Extraction_steady_model:
                     2.4643e14, rel=1e-3
                 )
                 assert jacobian_cond(model, scaled=True) == pytest.approx(
-                    1.1392e7, rel=1e-3
+                    1.24213e14, rel=1e-3
                 )
             else:
                 assert jacobian_cond(model, scaled=False) == pytest.approx(

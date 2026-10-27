@@ -168,8 +168,8 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
         # to encourage the solver to take
         # smaller steps
         "pH_phase": 10,
-        "conc_mol_comp": 1e5,
-        "flow_mol_comp": 1e3,
+        "conc_mol_comp": None,
+        "flow_mol_comp": None,
     }
     for ree in _ree_list:
         DEFAULT_SCALING_FACTORS[f"conc_mass_comp[{ree}]"] = 10
@@ -196,10 +196,20 @@ class MixedAcidPropertiesScaler(CustomScalerBase):
             )
 
         for idx, var in model.conc_mol_comp.items():
-            self.scale_variable_by_default(var, overwrite=overwrite)
+            if self.get_default_scaling_factor(var) is not None:
+                self.scale_variable_by_default(var, overwrite=overwrite)
+            else:
+                self.scale_variable_by_definition_constraint(
+                    var, model.conc_mol_comp_eqn[idx], overwrite=overwrite
+                )
 
         for idx, var in model.flow_mol_comp.items():
-            self.scale_variable_by_default(var, overwrite=overwrite)
+            if self.get_default_scaling_factor(var) is not None:
+                self.scale_variable_by_default(var, overwrite=overwrite)
+            else:
+                self.scale_variable_by_definition_constraint(
+                    var, model.flow_mol_comp_eqn[idx], overwrite=overwrite
+                )
 
     def constraint_scaling_routine(
         self, model, overwrite: bool = False, submodel_scalers: dict = None
@@ -383,7 +393,7 @@ class MixedAcidParameterData(PhysicalParameterBlock):
                 }
             )
 
-        elif self.config.include_sulfates:
+        if self.config.include_sulfates:
             split.update(
                 {
                     "HSO4_-": 1e-20,
@@ -391,10 +401,10 @@ class MixedAcidParameterData(PhysicalParameterBlock):
                 }
             )
 
-        elif self.config.include_ascorbates:
+        if self.config.include_ascorbates:
             split.update(
                 {
-                    "HAsc-": 1e-20,
+                    "HAsc": 1e-20,
                     "Asc_-": 1e-20,
                     "HDha": 1e-20,
                     "Dha_-": 1e-20,
@@ -404,7 +414,7 @@ class MixedAcidParameterData(PhysicalParameterBlock):
         self.split = Param(
             self.component_list,
             units=units.kg / units.kg,
-            initialize=split,
+            initialize={k: v for k, v in split.items() if k in self.component_list},
         )
 
         if (

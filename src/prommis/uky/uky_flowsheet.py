@@ -777,7 +777,6 @@ def set_scaling(m):
     precip_properties_scaler = m.fs.precip_soln.default_state_scaler_class()
     vapor_properties_scaler = m.fs.prop_gas.default_state_scaler_class()
 
-    # These are the default scaling factors set by iscale in mixed_acid_properties
     leach_properties_scaler.default_scaling_factors["flow_vol"] = 1e1
     leach_properties_scaler.default_scaling_factors["conc_mass_comp"] = 1e2
     leach_properties_scaler.default_scaling_factors["conc_mol_comp"] = 1e5
@@ -1018,7 +1017,7 @@ def set_operating_conditions(m, DEHPA_dosage=0.2):
 
     m.fs.precip_sep.split_fraction[:, "recycle"].fix(0.9)
 
-    # Fix precipitator outlet temperature and HRT
+    # Fix precipitator outlet temperature and pressure
     m.fs.precipitator.precipitate_state_block[0].temperature.fix(348.15 * units.K)
     m.fs.precipitator.cv_aqueous.properties_out[0].temperature.fix(348.15)
     m.fs.precipitator.cv_aqueous.properties_out[0].pressure.fix(P_atm)
@@ -1250,7 +1249,7 @@ def initialize_system(m):
 
     initializer_leach = LeachingTrainInitializer()
     leach_units = [
-        # m.fs.leach,
+        m.fs.leach,
     ]
 
     initializer_sx = SolventExtractionInitializer()
@@ -1264,46 +1263,8 @@ def initialize_system(m):
 
     initializer_bt = BlockTriangularizationInitializer()
 
-    # seed_unset_vars, initialize_leaching, and initialize precipitator were written with the help of AI
-    def seed_unset_vars(blk, default=1.0):
-        """Give every uninitialized Var in blk a placeholder value so residual
-        diagnostics can run without crashing on None. Not physically meaningful
-        -- just avoids `value()` errors on variables nothing has touched yet.
-        """
-        count = 0
-        for v in blk.component_data_objects(Var, active=True, descend_into=True):
-            if v.value is None:
-                lb = v.lb if v.lb is not None else default
-                v.set_value(lb if lb != 0 else default)
-                count += 1
-        print(f"seeded {count} previously-uninitialized variables")
-
-    def initialize_leaching(blk):
-        mc = blk.mscontactor
-        for phase in ("liquid", "solid"):
-            inlet = getattr(mc, f"{phase}_inlet_state")
-            stages = getattr(mc, phase)
-            for t, s in stages:
-                src = inlet[t]
-                dst = stages[t, s]
-                dst_vars = dst.define_state_vars()
-                for name, svar in src.define_state_vars().items():
-                    dvar = dst_vars[name]
-                    for idx in svar:  # idx is None for scalar vars
-                        dvar[idx].set_value(value(svar[idx]))
-
-        # derived liquid properties, consistent with the copied mass concentrations
-        for t, s in mc.liquid:
-            state = mc.liquid[t, s]
-            for j in state.conc_mol_comp:
-                calculate_variable_from_constraint(
-                    state.conc_mol_comp[j], state.conc_mol_comp_eqn[j]
-                )
-            for j in state.flow_mol_comp:
-                calculate_variable_from_constraint(
-                    state.flow_mol_comp[j], state.flow_mol_comp_eqn[j]
-                )
-
+    # initialize_precipitator was written with the help of AI
+    #TODO: replace this initialization routine with an initializer for the precipitator unit model
     def initialize_precipitator(unit):
         prop_aq = unit.config.property_package_aqueous
         prop_s = unit.config.property_package_precipitate
@@ -1345,37 +1306,6 @@ def initialize_system(m):
         if unit in feed_units:
             _log.info(f"Initializing {unit}")
             initializer_feed.initialize(unit)
-        elif unit == m.fs.leach:
-            _log.info(f"Manually initializing {unit}")
-            m.fs.leach.liquid_inlet.flow_vol.fix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.fix()
-            m.fs.leach.liquid_inlet.temperature.fix()
-            m.fs.leach.liquid_inlet.pressure.fix()
-
-            m.fs.leach.solid_inlet.flow_mass.fix()
-            m.fs.leach.solid_inlet.mass_frac_comp.fix()
-
-            seed_unset_vars(m.fs.leach)
-            for idx in m.fs.leach.mscontactor.liquid_inherent_reaction_extent:
-                m.fs.leach.mscontactor.liquid_inherent_reaction_extent[idx].set_value(0)
-            for idx in m.fs.leach.mscontactor.heterogeneous_reaction_extent:
-                m.fs.leach.mscontactor.heterogeneous_reaction_extent[idx].set_value(0)
-            initialize_leaching(m.fs.leach)
-
-            solver = get_solver()
-            solver.options["bound_relax_factor"] = 0
-            solver.options["max_iter"] = 500
-            solver.options["nlp_scaling_method"] = "user-scaling"
-            solver.solve(m.fs.leach, tee=True)
-            print(solver.options)
-
-            m.fs.leach.liquid_inlet.flow_vol.unfix()
-            m.fs.leach.liquid_inlet.conc_mass_comp.unfix()
-            m.fs.leach.liquid_inlet.temperature.unfix()
-            m.fs.leach.liquid_inlet.pressure.unfix()
-
-            m.fs.leach.solid_inlet.flow_mass.unfix()
-            m.fs.leach.solid_inlet.mass_frac_comp.unfix()
         elif unit == m.fs.precipitator:
             _log.info(f"Manually initializing {unit}")
             m.fs.precipitator.aqueous_inlet.flow_vol.fix()

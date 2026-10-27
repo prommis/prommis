@@ -29,6 +29,8 @@ Additional constraints
 1. eq_flow_vol_rule: Inlet and outlet volumetric flow rates are equal
 2. conc_mass_comp_shared_eqn: The concentrations of the shared components are equal
 3. conc_mass_comp_sulfate_eqn: Sulfate components have near-zero concentration, defined by eps_conc_mass
+4. eq_temperature_rule: Inlet and outlet temperatures are equal
+5. eq_pressure_rule: Inlet and outlet pressures are equal
 
 """
 

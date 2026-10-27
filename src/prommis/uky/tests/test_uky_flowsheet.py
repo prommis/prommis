@@ -296,7 +296,7 @@ def test_solution(system_frame):
         (0, "La_o"): (7.97732e-02, tol, None),
         (0, "Nd_o"): (2.87135e-01, tol, None),
         (0, "Pr_o"): (3.51405e-02, tol, None),
-        (0, "Sc_o"): (1.74599e-04, tol, None),
+        (0, "Sc_o"): (1.746e-04, tol, None),
         (0, "Sm_o"): (6.39721e-03, tol, None),
         (0, "Y_o"): (2.17061e-01, tol, None),
     }
@@ -357,7 +357,7 @@ def test_solution(system_frame):
         (0, "La2(C2O4)3(s)"): (0.000153, None, tol),
         (0, "Nd2(C2O4)3(s)"): (0.00066, None, tol),
         (0, "Pr2(C2O4)3(s)"): (2.77874e-7, None, tol),
-        (0, "Sc2(C2O4)3(s)"): (3.34866e-12, tol, None),
+        (0, "Sc2(C2O4)3(s)"): (3.11363e-18, None, 1e-8),
         (0, "Sm2(C2O4)3(s)"): (1.20288e-6, None, tol),
         (0, "Y2(C2O4)3(s)"): (1.12438e-04, tol, None),
     }

@@ -7,3 +7,7 @@
 """
 Unit models for the comminution module.
 """
+
+from prommis.comminution.unit_models.crusher import CrusherSolidPSD
+
+__all__ = ["CrusherSolidPSD"]

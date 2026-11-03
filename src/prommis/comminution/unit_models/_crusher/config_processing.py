@@ -131,6 +131,11 @@ def validate_and_copy_configuration(config):
     The other nested inputs are used only during build.
     """
     cfg = config
+    if cfg.recycle is None:
+        raise ConfigurationError(
+            "recycle=None is not valid; use 'single_pass' for no recycle or "
+            "'classification_recycle'."
+        )
     n_events = _validate_n_stress_events(cfg.n_stress_events)
     # Capture explicit choices before equipment defaults change _userSet.
     user_set = {

@@ -14,6 +14,7 @@ from pyomo.common.collections import ComponentMap, ComponentSet
 from pyomo.common.config import ConfigValue, In
 from pyomo.environ import units, value
 
+from idaes.core.scaling.util import del_scaling_factor
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.misc import StrEnum
 
@@ -148,15 +149,27 @@ def delegate_state_block_scaling(
 
 
 def run_product_block_overrides(scaler, blocks, submodel_scalers, overwrite=False):
-    """Run product-block scalers in ``submodel_scalers``.
+    """Run supplied product-block scalers and return the blocks they handle.
 
-    Return the blocks with supplied scalers. Input-based units then fill only
-    product factors the supplied scalers left unset.
+    With ``overwrite=True``, clear existing scaling factors on the state variables
+    named in ``PROPAGATED_STATE_VAR_NAMES`` in those blocks before calling their
+    scalers. Input-based units then fill any factors left unset.
     """
     overridden = ComponentSet(
         blk for blk in blocks if submodel_scalers and blk in submodel_scalers
     )
     if overridden:
+        if overwrite:
+            for var_data in (
+                v
+                for blk in overridden
+                for data in blk.values()
+                for name in PROPAGATED_STATE_VAR_NAMES
+                if hasattr(data, name)
+                for v in getattr(data, name).values()
+            ):
+                if scaler.get_scaling_factor(var_data) is not None:
+                    del_scaling_factor(var_data)
         delegate_state_block_scaling(
             scaler,
             list(overridden),

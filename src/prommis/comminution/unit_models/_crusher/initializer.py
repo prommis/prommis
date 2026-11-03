@@ -111,9 +111,10 @@ class CrusherSolidPSDInitializer(sr.SizeReducerInitializerBase):
 
         IDAES ``InitializerBase.initialize`` calls ``precheck`` outside its
         try/finally block, so a failed precheck would leave the inlet fixed and
-        the temporary logger level set. This override restores the entry state
-        on failure, clears the logger level on every exit, and resets the
-        summary before each run.
+        the temporary logger level set. This override resets the summary before
+        each run, restores the entry state on failure, and clears the logger level
+        on every exit. An exception that leaves the status at ``none`` is recorded
+        as ``Error``.
         """
         self._reset_summary(model)
         try:
@@ -125,6 +126,8 @@ class CrusherSolidPSDInitializer(sr.SizeReducerInitializerBase):
                 exclude_unused_vars=exclude_unused_vars,
             )
         except Exception:
+            if self.summary[model]["status"] == InitializationStatus.none:
+                self._update_summary(model, "status", InitializationStatus.Error)
             self.restore_model_state(model)
             raise
         finally:

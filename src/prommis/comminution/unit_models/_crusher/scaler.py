@@ -14,7 +14,6 @@ from pyomo.common.collections import ComponentSet
 from pyomo.core.expr.visitor import identify_variables
 from pyomo.environ import units, value
 
-from prommis.comminution.core.psd_math import finest_attainable_size
 from prommis.comminution.core.unit_utils import (
     FactorSource,
     fixed_value_or_none,
@@ -314,9 +313,10 @@ class CrusherSolidPSDScaler(sr.SizeReducerScalerBase):
         """Estimate product P80 in meters for input-based power scaling.
 
         Tabular products use fixed component totals and prepared tabular fractions;
-        the size-spec path uses ``target_product_p80``. Matrix paths divide the feed F80
-        by ``INPUT_BASED_REDUCTION_RATIO``, bounded by the finest attainable P80 and
-        the feed F80.
+        the size-spec path uses ``target_product_p80``. Matrix paths divide feed F80
+        by ``INPUT_BASED_REDUCTION_RATIO`` without applying the finest attainable
+        P80 as a lower bound. This keeps the power estimate positive when the feed
+        is entirely in the finest interval.
         """
         if model.product_path == ProductPath.tabular:
             tables = model._crushing_data_from_params().tabular_fractions
@@ -329,10 +329,7 @@ class CrusherSolidPSDScaler(sr.SizeReducerScalerBase):
             )
         if model.product_path == ProductPath.distribution_size_spec:
             return value(units.convert(model.target_product_p80, to_units=units.m))
-        return min(
-            max(f80 / cls.INPUT_BASED_REDUCTION_RATIO, finest_attainable_size(edges)),
-            f80,
-        )
+        return f80 / cls.INPUT_BASED_REDUCTION_RATIO
 
     def _input_based_shape_size_factor(self, model, t, edges):
         """Return the input-based factor for the distribution's characteristic size.

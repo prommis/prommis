@@ -201,10 +201,10 @@ def _power_case(case):
     if case == "finest_attainable_p80":
         fine = {"OreA": [5.0, 5.0, 0.0, 0.0], "OreB": [0.0] * 4}
         m, cr = build_crusher(recycle, feed=fine)
-        # By hand: F80 = 2 + 0.3/0.5 x 2 = 3.2 mm, and F80/4 = 0.8 mm is below
-        # the finest attainable P80, 1 + 0.8 x 1 = 1.8 mm. So
-        # E = 120 (1/sqrt(1800) - 1/sqrt(3200)) = 0.70711 kWh/t, P = 25.456 kW.
-        return m, cr, 1 / _bond_power_kw(1800.0, _f80_um(cr)), 1 / 25.456
+        # F80 = 3.2 mm, so F80/4 = 0.8 mm, below the finest attainable
+        # P80 of 1.8 mm. The scaling estimate still uses 0.8 mm, giving
+        # Bond energy 2.1213 kWh/t and power 76.368 kW.
+        return m, cr, 1 / _bond_power_kw(_f80_um(cr) / 4, _f80_um(cr)), 1 / 76.368
     if case == "size_spec_target_p80":
         m, cr = build_crusher(GGS_SIZE_SPEC)
         # By hand: E = 120 (1/sqrt(5000) - 1/120) = 0.69706 kWh/t, P = 25.094 kW.

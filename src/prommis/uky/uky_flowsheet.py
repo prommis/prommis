@@ -2950,11 +2950,6 @@ def optimize_model(m):
             * b.properties[t].conc_mol_comp["H_+"]
         )
 
-    #
-    # sf = get_scaling_factor(m.fs.leach.mscontactor.liquid[0, 1].hso4_dissociation)
-    # for condata in m.fs.leach_liquid_feed.HSO4_dissociation.values():
-    #     set_scaling_factor(condata, sf)
-
     # We should think about how strong of acid we can use for leaching
     m.fs.leach_liquid_feed.properties[0].pH_phase["liquid"].setlb(0)
 
@@ -3000,8 +2995,6 @@ def optimize_model(m):
                 == b.properties[t].conc_mol_comp["Cl_-"]
             )
 
-        # for condata in feed.HCl_stoich_eqn.values():
-        #     set_scaling_factor(condata, 10)
 
     # We can't make extractant dosage a decision variable until we have a
     # correlation for how impurity (Fe, Al, Ca) distribution coefficients
@@ -3049,4 +3042,3 @@ if __name__ == "__main__":
     optimize_model(m)
     # data_reconciliation(m)
 
-    # TODO: Need to add scaling to costing to stabilize the solve

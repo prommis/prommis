@@ -10,10 +10,11 @@ __author__ = "Daison Yancy Caballero"
 
 import math
 
-from pyomo.common.collections import ComponentMap
+from pyomo.common.collections import ComponentMap, ComponentSet
 from pyomo.common.config import ConfigValue, In
 from pyomo.environ import units, value
 
+from idaes.core.scaling.util import del_scaling_factor
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core.util.misc import StrEnum
 
@@ -147,6 +148,39 @@ def delegate_state_block_scaling(
         )
 
 
+def run_product_block_overrides(scaler, blocks, submodel_scalers, overwrite=False):
+    """Run supplied product-block scalers and return the blocks they handle.
+
+    With ``overwrite=True``, clear existing scaling factors on the state variables
+    named in ``PROPAGATED_STATE_VAR_NAMES`` in those blocks before calling their
+    scalers. Input-based units then fill any factors left unset.
+    """
+    overridden = ComponentSet(
+        blk for blk in blocks if submodel_scalers and blk in submodel_scalers
+    )
+    if overridden:
+        if overwrite:
+            for var_data in (
+                v
+                for blk in overridden
+                for data in blk.values()
+                for name in PROPAGATED_STATE_VAR_NAMES
+                if hasattr(data, name)
+                for v in getattr(data, name).values()
+            ):
+                if scaler.get_scaling_factor(var_data) is not None:
+                    del_scaling_factor(var_data)
+        delegate_state_block_scaling(
+            scaler,
+            list(overridden),
+            None,
+            submodel_scalers,
+            "variable_scaling_routine",
+            overwrite=overwrite,
+        )
+    return overridden
+
+
 def scale_constraints_at_time(scaler, model, name_factor_pairs, t, overwrite=False):
     """Apply per-family scaling factors to the time-``t`` members of each family.
 
@@ -188,6 +222,32 @@ def inverse_sum_of_nominals(scaler, components, floor=1.0e-8):
     """
     total = sum(1.0 / required_scaling_factor(scaler, c) for c in components)
     return 1.0 / max(total, floor)
+
+
+def inverse_max_nominal(scaler, components, floor=1.0e-8):
+    """Return ``1 / max(max_i(1 / sf_i), floor)`` for nonempty ``components``.
+
+    Use the largest nominal among a balance row's terms, so a small component
+    flow is not scaled from the full stream. Each component needs a positive
+    scaling factor; ``floor`` is in the units of the nominals.
+    """
+    largest = max(1.0 / required_scaling_factor(scaler, c) for c in components)
+    return 1.0 / max(largest, floor)
+
+
+def scale_rows_by_largest_term(scaler, model, name, terms_of, overwrite=False):
+    """Scale each row of family ``name`` by :func:`inverse_max_nominal`.
+
+    ``terms_of(idx)`` returns the Vars that make up row ``idx``. A family absent
+    from ``model`` is skipped.
+    """
+    con = getattr(model, name, None)
+    if con is None:
+        return
+    for idx, row in con.items():
+        scaler.set_constraint_scaling_factor(
+            row, inverse_max_nominal(scaler, terms_of(idx)), overwrite=overwrite
+        )
 
 
 def inverse_magnitude_factor(reference_value, floor):

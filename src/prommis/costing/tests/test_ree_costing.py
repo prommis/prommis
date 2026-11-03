@@ -4457,7 +4457,6 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
     m.fs.H2O = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.H2O.fix()
 
-    # TODO fix typo in regex, harzardous
     with pytest.raises(
         AttributeError,
         match="A resource was included that does not contain a price. Prices "
@@ -4466,7 +4465,7 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
         "'SCR_catalyst_waste', 'triethylene_glycol_waste', 'amine_purification_unit_waste', "
         "'thermal_reclaimer_unit_waste', 'PSA_adsorbent', 'amine_entrainer', "
         "'electricity', 'reactive_membrane_replacement', 'PSA_adsorbent_waste_disposal', "
-        "'nonharzardous_waste_disposal', 'cooling_water', 'chilled_water', "
+        "'nonhazardous_waste_disposal', 'cooling_water', 'chilled_water', "
         "'lp_heating_steam', 'mp_heating_steam', 'hp_heating_steam', 'sulfolane_entrainer', "
         "'ZnO_sulfur_guard_catalyst', 'prereformer_catalyst', 'reformer_catalyst', "
         "'ZnO_sulfur_guard_catalyst_waste_disposal', 'prereformer_catalyst_waste_disposal', "

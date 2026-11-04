@@ -8,6 +8,5 @@ isort
 nbmake==1.4.6
 sphinx_design==0.6.0
 custom-pylint @ git+https://github.com/prommis/custom_pylint.git@main
-idaes-pse @ git+https://github.com/bpaul4/idaes-pse.git@cleanup-costing
 
 --editable .[watertap,flowsheet-processor]

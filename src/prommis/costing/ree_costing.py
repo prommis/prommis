@@ -158,33 +158,6 @@ class REECostingData(QGESSCostingData):
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
-        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
-        if isinstance(self.Lang_factor, Expression):
-            installation_components = {
-                "piping_materials_and_labor_percentage": 20,
-                "electrical_materials_and_labor_percentage": 20,
-                "instrumentation_percentage": 8,
-                "plants_services_percentage": 10,
-                "process_buildings_percentage": 40,
-                "auxiliary_buildings_percentage": 15,
-                "site_improvements_percentage": 10,
-                "equipment_installation_percentage": 17,
-                "field_expenses_percentage": 12,
-                "project_management_and_construction_percentage": 30,
-                "process_contingency_percentage": 15,
-            }
-
-            delattr(self, "Lang_factor")
-            self.Lang_factor = Expression(
-                expr=pyunits.convert(
-                    sum(
-                        self.installation_components[k] for k in installation_components
-                    ),
-                    to_units=pyunits.dimensionless,
-                )
-                + 1  # added this
-            )
-
     def build_REE_process_costs(self, **kwargs):
         """
         Wrapper method for building PrOMMiS REE process costs.

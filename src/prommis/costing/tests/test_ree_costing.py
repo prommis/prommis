@@ -1161,49 +1161,80 @@ class TestREECosting(object):
             30.061, rel=1e-4
         )
         assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
-            -114.1620885,
-            rel=1e-4,  # TODO update to -112.78144 once IDAES side is patched
+            -112.78144,
+            rel=1e-4,
         )
         assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
-            -11.1358148,
-            rel=1e-4,  # TODO update to -11.001142 once IDAES side is patched
+            -11.001142,
+            rel=1e-4,
         )
         assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
             -5051.7729, rel=1e-4
         )
         assert value(model.fs.costing.pv_revenue) == pytest.approx(257.91371, rel=1e-4)
-        assert value(model.fs.costing.npv) == pytest.approx(
-            -4919.1571, rel=1e-4
-        )  # TODO update to -4917.6417 once IDAES side is patched
+        assert value(model.fs.costing.npv) == pytest.approx(-4917.6417, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
         # test report methods
+        REECostingData.display_total_plant_costs(model.fs.costing)
+        REECostingData.display_bare_erected_costs(model.fs.costing)
+
         REECostingData.report(model.fs.costing, export=True)
+
+        # check exported file
         assert os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
         # cleanup
         os.remove(os.path.join(os.getcwd(), "costing_report.csv"))
         assert not os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
 
-        REECostingData.display_total_plant_costs(model.fs.costing)
-        REECostingData.display_bare_erected_costs(model.fs.costing)
+        # check report
+        print(model.fs.costing.report_dir)
+        expected = {
+            "Value": {
+                "Plant Cost Units": "MUSD_UKy_2019",
+                "Total TPC [$MM]": 133.23,
+                "Capacity Factor": 0.92000,
+                "Estimated Operating Days Per Year": 336.03,
+                "Total Bare Erected Cost": 44.308,
+                "Total Overnight Cost [$MM]": 133.23,
+                "Total Other Plant Costs": 1.6309,
+                "Total As Spent Cost [$MM]": 152.41,
+                "Total Annualized Capital Cost [$MM/year]": 15.272,
+                "Total fixed O&M cost [$MM/year]": 11.519,
+                "Total Annual Operating Labor Cost": 4.1406,
+                "Total Annual Technical Labor Cost": 1.9887,
+                "Summation of Annual Labor Costs": 6.1293,
+                "Total Maintenance and Material Cost": 2.6645,
+                "Total Quality Assurance and Control Cost": 0.41406,
+                "Total Sales, Patenting and Research Cost": 0.15031,
+                "Total Admin Support and Labor Cost": 0.82812,
+                "Total Property Taxes and Insurance Cost": 1.3323,
+                "Summation of Sales, Admin and Insurance Cost": 2.3107,
+                "Total Other Fixed Costs": 1.0000e-12,
+                "Total variable O&M cost full capacity [$MM/year]": 576.07,
+                "Total variable O&M cost operating capacity [$MM/year]": 529.98,
+                "Total Variable Power Cost": 5.9079,
+                "Total Variable Waste Cost": 5.4660,
+                "Total Variable Chemicals Cost": 465.54,
+                "General Plant Overhead Cost": 97.931,
+                "Total Plant Overhead Cost, Including Maintenance & Quality Assurance": 101.01,
+                "Total Land Cost": 1.2247,
+                "Total Annualized Cost excluding all transport [$MM/year]": 556.77,
+                "Total Sales Revenue Cost": 30.061,
+                "Net Present Value [$MM]": -4917.6,
+            }
+        }
 
-    @pytest.mark.unit
-    def test_display_flowsheet_cost(self, model, capsys):
-        capsys.readouterr()
-        REECostingData.display_flowsheet_cost(
-            model.fs.costing,
-            feedstock_rate=model.fs.feedstock,
-            production_rate=model.fs.recovery_rate_per_year,
-        )
-        report_output = capsys.readouterr().out
+        assert model.fs.costing.report_dir["Value"].keys() == expected["Value"].keys()
 
-        assert "Total bare erected cost (MUSD)" in report_output
-        assert "Total annual O&M cost (MUSD/year)" in report_output
-        assert "Total annual O&M cost per ton feed processed (USD/ton)" in report_output
-        assert "Total annual O&M cost per kg REE recovered (USD/kg)" in report_output
-        assert "Cost of recovery per kg REE recovered (USD/kg)" in report_output
-        assert "Net present value (MUSD)" in report_output
+        for k in model.fs.costing.report_dir["Value"]:
+            if k == "Plant Cost Units":
+                assert model.fs.costing.report_dir["Value"][k] == "MUSD_UKy_2019"
+            else:
+                assert model.fs.costing.report_dir["Value"][k] == pytest.approx(
+                    expected["Value"][k], rel=1e-4
+                ), f"Value mismatch for key {k}"
 
     @pytest.mark.unit
     def test_costing_bounding_build_diagnostics(self, model):
@@ -4457,7 +4488,6 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
     m.fs.H2O = pyo.Var(m.fs.time, initialize=1000, units=pyunits.gallon / pyunits.hr)
     m.fs.H2O.fix()
 
-    # TODO fix typo in regex, harzardous
     with pytest.raises(
         AttributeError,
         match="A resource was included that does not contain a price. Prices "
@@ -4466,7 +4496,7 @@ def test_REE_costing_variableOM_resourcenotinpricelist():
         "'SCR_catalyst_waste', 'triethylene_glycol_waste', 'amine_purification_unit_waste', "
         "'thermal_reclaimer_unit_waste', 'PSA_adsorbent', 'amine_entrainer', "
         "'electricity', 'reactive_membrane_replacement', 'PSA_adsorbent_waste_disposal', "
-        "'nonharzardous_waste_disposal', 'cooling_water', 'chilled_water', "
+        "'nonhazardous_waste_disposal', 'cooling_water', 'chilled_water', "
         "'lp_heating_steam', 'mp_heating_steam', 'hp_heating_steam', 'sulfolane_entrainer', "
         "'ZnO_sulfur_guard_catalyst', 'prereformer_catalyst', 'reformer_catalyst', "
         "'ZnO_sulfur_guard_catalyst_waste_disposal', 'prereformer_catalyst_waste_disposal', "

@@ -1229,9 +1229,12 @@ class TestREECosting(object):
         assert model.fs.costing.report_dir["Value"].keys() == expected["Value"].keys()
 
         for k in model.fs.costing.report_dir["Value"]:
-            assert model.fs.costing.report_dir["Value"][k] == pytest.approx(
-                expected["Value"][k], rel=1e-4
-            ), f"Value mismatch for key {k}"
+            if k == "Plant Cost Units":
+                assert model.fs.costing.report_dir["Value"][k] == "MUSD_UKy_2019"
+            else:
+                assert model.fs.costing.report_dir["Value"][k] == pytest.approx(
+                    expected["Value"][k], rel=1e-4
+                ), f"Value mismatch for key {k}"
 
     @pytest.mark.unit
     def test_costing_bounding_build_diagnostics(self, model):

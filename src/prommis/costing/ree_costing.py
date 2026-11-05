@@ -165,8 +165,6 @@ class REECostingData(QGESSCostingData):
         Passes to QGESS build_process_costs() and sets some defaults
         """
 
-        # TODO change to use additional dictionary arguments instead of looping through prices
-
         REE_resource_prices = load_default_resource_prices()
 
         if "resource_prices" not in kwargs:
@@ -192,84 +190,6 @@ class REECostingData(QGESSCostingData):
                 kwargs["sale_prices"][k] = REE_sale_prices[k]
 
         QGESSCostingData.build_process_costs(self, **kwargs)
-
-        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
-        if hasattr(self, "total_TPC_eq"):
-            delattr(self, "total_TPC_eq")
-
-            @self.Constraint()
-            def total_TPC_eq(c):
-                # TPC = BEC that needs Lang factor applied to get TPC + TPC that is already calculated
-                # apply location factor and economy of numbers here too
-                return c.total_TPC == (
-                    (
-                        (
-                            (sum(c.BEC_list) - sum(c.BEC_blocks_with_TPC_list))
-                            * c.Lang_factor
-                            + sum(c.TPC_blocks_with_TPC_list)
-                        )
-                        + c.other_plant_costs  # added this
-                    )
-                    # apply economy of numbers if enabled
-                    * (
-                        c.NOAK_factor if c.config.has_economy_of_numbers else 1
-                    )  # applied to whole TPC
-                    * c.location_factor
-                )
-
-        if hasattr(self, "total_variable_cost_eq"):
-            delattr(self, "total_variable_cost_eq")
-
-            @self.Constraint(self.parent_block().time)
-            def total_variable_cost_eq(c, t):
-                return (
-                    c.total_variable_OM_cost[t]
-                    == sum(
-                        c.variable_operating_costs[t, r] for r in kwargs["resources"]
-                    )
-                    + (
-                        c.plant_overhead_cost[t]
-                        if hasattr(c, "plant_overhead_cost")
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.land_cost
-                        if c.land_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.additional_chemicals_cost
-                        if c.additional_chemicals_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.additional_waste_cost
-                        if c.additional_waste_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    # for power plants, include maintenance material costs here if defined
-                    + (
-                        c.maintenance_material_cost
-                        if hasattr(c, "maintenance_material_cost")
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + c.other_variable_costs[t]  # added this
-                    + c.custom_variable_costs  # added this
-                )
-
-        if hasattr(self, "capex"):  # this is used for the NPV calculation
-            delattr(self, "capex")
-            self.capex = Expression(
-                expr=(
-                    self.total_TPC
-                    # removed double counting of other_plant_costs
-                    + (
-                        self.land_cost
-                        if self.land_cost_reoccurrence == "one_time"
-                        else 0 * self.CEPCI_units
-                    )
-                )
-            )
 
     def get_total_BEC(self):
         """Return the total bare erected cost, creating it if necessary."""

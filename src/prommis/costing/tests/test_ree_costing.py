@@ -1161,20 +1161,18 @@ class TestREECosting(object):
             30.061, rel=1e-4
         )
         assert value(model.fs.costing.pv_capital_cost) == pytest.approx(
-            -114.1620885,
-            rel=1e-4,  # TODO update to -112.78144 once IDAES side is patched
+            -112.78144,
+            rel=1e-4,
         )
         assert value(model.fs.costing.pv_loan_interest) == pytest.approx(
-            -11.1358148,
-            rel=1e-4,  # TODO update to -11.001142 once IDAES side is patched
+            -11.001142,
+            rel=1e-4,
         )
         assert value(model.fs.costing.pv_operating_cost) == pytest.approx(
             -5051.7729, rel=1e-4
         )
         assert value(model.fs.costing.pv_revenue) == pytest.approx(257.91371, rel=1e-4)
-        assert value(model.fs.costing.npv) == pytest.approx(
-            -4919.1571, rel=1e-4
-        )  # TODO update to -4917.6417 once IDAES side is patched
+        assert value(model.fs.costing.npv) == pytest.approx(-4917.6417, rel=1e-4)
 
     @pytest.mark.unit
     def test_report(self, model):
@@ -1220,16 +1218,16 @@ class TestREECosting(object):
                 "Total Variable Waste Cost": 5.4660,
                 "Total Variable Chemicals Cost": 465.54,
                 "General Plant Overhead Cost": 97.931,
-                "Total Plant Overhead Cost, Including Maintenance & Quality Assurance" : 101.01,
+                "Total Plant Overhead Cost, Including Maintenance & Quality Assurance": 101.01,
                 "Total Land Cost": 1.2247,
                 "Total Annualized Cost excluding all transport [$MM/year]": 556.77,
                 "Total Sales Revenue Cost": 30.061,
-                "Net Present Value [$MM]": -4919.2,
-                }
+                "Net Present Value [$MM]": -4917.6,
             }
-    
+        }
+
         assert model.fs.costing.report_dir["Value"].keys() == expected["Value"].keys()
-    
+
         for k in model.fs.costing.report_dir["Value"]:
             assert model.fs.costing.report_dir["Value"][k] == pytest.approx(
                 expected["Value"][k], rel=1e-4

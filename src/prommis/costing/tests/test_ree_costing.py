@@ -1189,7 +1189,6 @@ class TestREECosting(object):
         assert not os.path.exists(os.path.join(os.getcwd(), "costing_report.csv"))
 
         # check report
-        print(model.fs.costing.report_dir)
         expected = {
             "Value": {
                 "Plant Cost Units": "MUSD_UKy_2019",
@@ -1221,6 +1220,8 @@ class TestREECosting(object):
                 "Total Plant Overhead Cost, Including Maintenance & Quality Assurance": 101.01,
                 "Total Land Cost": 1.2247,
                 "Total Annualized Cost excluding all transport [$MM/year]": 556.77,
+                "Cost of Production [$/kilogram]": 2379.6,
+                "Cost of Feedstock [$/ton]": 138.08,
                 "Total Sales Revenue Cost": 30.061,
                 "Net Present Value [$MM]": -4917.6,
             }

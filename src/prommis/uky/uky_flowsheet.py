@@ -2995,7 +2995,6 @@ def optimize_model(m):
                 == b.properties[t].conc_mol_comp["Cl_-"]
             )
 
-
     # We can't make extractant dosage a decision variable until we have a
     # correlation for how impurity (Fe, Al, Ca) distribution coefficients
     # vary with dosage
@@ -3041,4 +3040,3 @@ if __name__ == "__main__":
     m, results = main()
     optimize_model(m)
     # data_reconciliation(m)
-

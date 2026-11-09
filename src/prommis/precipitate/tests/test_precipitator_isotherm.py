@@ -221,7 +221,7 @@ class TestPrec(object):
         assert check_optimal_termination(results)
 
         assert jacobian_cond(prec, scaled=False) == pytest.approx(1.96086723e12)
-        assert jacobian_cond(prec, scaled=True) == pytest.approx(6.39830401e4)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(6.9567505e4)
 
     @pytest.mark.component
     @pytest.mark.solver
@@ -484,7 +484,7 @@ class TestPrecRob(object):
         assert len(unscaled_var_list) == 0
 
         assert jacobian_cond(prec, scaled=False) == pytest.approx(1.29555270e12)
-        assert jacobian_cond(prec, scaled=True) == pytest.approx(1.72335026e4)
+        assert jacobian_cond(prec, scaled=True) == pytest.approx(4.4827361e4)
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")

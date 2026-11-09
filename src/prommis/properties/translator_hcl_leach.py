@@ -200,5 +200,3 @@ class TranslatorHClLeachData(TranslatorData):
         )
         def conc_mass_sulfates_eqn(blk, t, i):
             return blk.properties_out[t].conc_mass_comp[i] == blk.eps_conc_mass
-
-        # TODO what about temperature and pressure?

@@ -14,13 +14,19 @@ LeachTrain unit model.
 
 """
 
-from pyomo.common.config import ConfigValue
+from pyomo.common.config import ConfigDict, ConfigValue
 from pyomo.environ import Expression, Param, Set, units
 
 from idaes.core import ProcessBlock, ProcessBlockData, declare_process_block_class
 from idaes.core.base import property_meta
 from idaes.core.scaling import CustomScalerBase
 from idaes.core.util.misc import add_object_reference
+
+_metal_list = ["La", "Y", "Pr", "Ce", "Nd", "Sm", "Gd", "Dy", "Al", "Ca", "Fe", "Sc"]
+
+_default_aqueous_aliases = {e: e for e in _metal_list}
+_default_aqueous_aliases["H"] = "H"
+_default_aqueous_aliases["H2O"] = "H2O"
 
 
 class LeachReactionScaler(CustomScalerBase):
@@ -76,78 +82,52 @@ class CoalRefuseLeachingReactionParameterData(
 
     """
 
+    CONFIG = ConfigDict()
+    CONFIG.declare(
+        "aqueous_aliases",
+        ConfigValue(
+            default=_default_aqueous_aliases,
+            domain=dict,
+            description="Dictionary matching element names in the element "
+            "list to elements in the aqueous stream. Used when, e.g., cation "
+            "charges are included in the element name, as is done in the "
+            "MixedAcidProperties.",
+        ),
+    )
+
     def build(self):
         super().build()
 
         self._reaction_block_class = CoalRefuseLeachingReactionBlock
 
-        self.reaction_idx = Set(
-            initialize=[
-                "Al2O3",
-                "Fe2O3",
-                "CaO",
-                "Sc2O3",
-                "Y2O3",
-                "La2O3",
-                "Ce2O3",
-                "Pr2O3",
-                "Nd2O3",
-                "Sm2O3",
-                "Gd2O3",
-                "Dy2O3",
-            ]
-        )
+        reaction_idx = []
+        reaction_stoich = {}
 
-        self.reaction_stoichiometry = {
-            ("Al2O3", "liquid", "Al"): 2,
-            ("Al2O3", "liquid", "H2O"): 3,
-            ("Al2O3", "solid", "Al2O3"): -1,
-            ("Al2O3", "liquid", "H"): -6,
-            ("Fe2O3", "liquid", "Fe"): 2,
-            ("Fe2O3", "liquid", "H2O"): 3,
-            ("Fe2O3", "solid", "Fe2O3"): -1,
-            ("Fe2O3", "liquid", "H"): -6,
-            ("CaO", "liquid", "Ca"): 1,
-            ("CaO", "liquid", "H2O"): 1,
-            ("CaO", "solid", "CaO"): -1,
-            ("CaO", "liquid", "H"): -2,
-            ("Sc2O3", "liquid", "Sc"): 2,
-            ("Sc2O3", "liquid", "H2O"): 3,
-            ("Sc2O3", "solid", "Sc2O3"): -1,
-            ("Sc2O3", "liquid", "H"): -6,
-            ("Y2O3", "liquid", "Y"): 2,
-            ("Y2O3", "liquid", "H2O"): 3,
-            ("Y2O3", "solid", "Y2O3"): -1,
-            ("Y2O3", "liquid", "H"): -6,
-            ("La2O3", "liquid", "La"): 2,
-            ("La2O3", "liquid", "H2O"): 3,
-            ("La2O3", "solid", "La2O3"): -1,
-            ("La2O3", "liquid", "H"): -6,
-            ("Ce2O3", "liquid", "Ce"): 2,
-            ("Ce2O3", "liquid", "H2O"): 3,
-            ("Ce2O3", "solid", "Ce2O3"): -1,
-            ("Ce2O3", "liquid", "H"): -6,
-            ("Pr2O3", "liquid", "Pr"): 2,
-            ("Pr2O3", "liquid", "H2O"): 3,
-            ("Pr2O3", "solid", "Pr2O3"): -1,
-            ("Pr2O3", "liquid", "H"): -6,
-            ("Nd2O3", "liquid", "Nd"): 2,
-            ("Nd2O3", "liquid", "H2O"): 3,
-            ("Nd2O3", "solid", "Nd2O3"): -1,
-            ("Nd2O3", "liquid", "H"): -6,
-            ("Sm2O3", "liquid", "Sm"): 2,
-            ("Sm2O3", "liquid", "H2O"): 3,
-            ("Sm2O3", "solid", "Sm2O3"): -1,
-            ("Sm2O3", "liquid", "H"): -6,
-            ("Gd2O3", "liquid", "Gd"): 2,
-            ("Gd2O3", "liquid", "H2O"): 3,
-            ("Gd2O3", "solid", "Gd2O3"): -1,
-            ("Gd2O3", "liquid", "H"): -6,
-            ("Dy2O3", "liquid", "Dy"): 2,
-            ("Dy2O3", "liquid", "H2O"): 3,
-            ("Dy2O3", "solid", "Dy2O3"): -1,
-            ("Dy2O3", "liquid", "H"): -6,
-        }
+        H = self.config.aqueous_aliases["H"]
+        H2O = self.config.aqueous_aliases["H2O"]
+
+        for j in _metal_list:
+            j_alias = self.config.aqueous_aliases[j]
+            if j == "Ca":
+                # CaO + 2H_+ -> H2O + Ca_2+
+                oxide = "CaO"
+                reaction_stoich[("CaO", "liquid", j_alias)] = 1
+                reaction_stoich[("CaO", "liquid", H2O)] = 1
+                reaction_stoich[("CaO", "solid", "CaO")] = -1
+                reaction_stoich[("CaO", "liquid", H)] = -2
+            else:
+                # Reaction of the form {j}2O3 + 6H_+ -> 2{j}_3+ + 3H2O
+                oxide = f"{j}2O3"
+                reaction_stoich[(oxide, "liquid", j_alias)] = 2
+                reaction_stoich[(oxide, "liquid", H2O)] = 3
+                reaction_stoich[(oxide, "solid", oxide)] = -1
+                reaction_stoich[(oxide, "liquid", H)] = -6
+
+            reaction_idx.append(oxide)
+
+        self.reaction_idx = Set(initialize=reaction_idx)
+
+        self.reaction_stoichiometry = reaction_stoich
 
         self.A = Param(
             self.reaction_idx,
@@ -270,7 +250,8 @@ class CoalRefuseLeachingReactionData(ProcessBlockData):
             l_block = b.parent_block().liquid[b.index()]
             s_block = b.parent_block().solid[b.index()]
 
-            h_conc = l_block.conc_mol_comp["H"]
+            H_idx = b.params.config["aqueous_aliases"]["H"]
+            h_conc = l_block.conc_mol_comp[H_idx]
 
             # Pulp density calculation
             eps = units.convert(

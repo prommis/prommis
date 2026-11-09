@@ -12,6 +12,7 @@ import pytest
 
 from prommis.precipitate.precipitate_solids_properties_isotherm import (
     PrecipitateParameters,
+    PrecipitateParametersScaler,
 )
 
 
@@ -34,3 +35,5 @@ def test_build():
 
     for j in m.fs.prec_solid.component_list:
         assert m.fs.state[0].flow_mol_comp[j].fixed
+
+    assert m.fs.state[0].default_scaler is PrecipitateParametersScaler

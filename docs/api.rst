@@ -45,6 +45,15 @@ Precipitate
    prommis.precipitate.precipitate_liquid_properties
    prommis.precipitate.precipitate_solids_properties
 
+Comminution properties
+----------------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary/module-with-contents.rst
+
+   prommis.comminution.properties.solid_psd_properties
+
 Crusher
 -------
 

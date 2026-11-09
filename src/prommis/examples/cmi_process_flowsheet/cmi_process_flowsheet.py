@@ -63,10 +63,7 @@ def main():
 
     set_scaling(m)
 
-    scaling = TransformationFactory("core.scale_model")
-    scaled_model = scaling.create_using(m, rename=False)
-
-    if degrees_of_freedom(scaled_model) != 0:
+    if degrees_of_freedom(m) != 0:
         raise AssertionError(
             "The degrees of freedom are not equal to 0."
             "Check that the expected variables are fixed and unfixed."
@@ -74,14 +71,14 @@ def main():
         )
 
     # structural diagnostics check
-    dt = DiagnosticsToolbox(scaled_model)
+    dt = DiagnosticsToolbox(m)
     dt.assert_no_structural_warnings()
 
-    initialize_system(scaled_model)
+    initialize_system(m)
 
-    scaled_results = solve_system(scaled_model, False)
+    results = solve_system(m, False)
 
-    if not check_optimal_termination(scaled_results):
+    if not check_optimal_termination(results):
         raise RuntimeError(
             "Solver failed to terminate with an optimal solution. Please check the solver logs for more details"
         )
@@ -89,11 +86,9 @@ def main():
     # numerical diagnostics test
     dt.assert_no_numerical_warnings()
 
-    res = scaling.propagate_solution(scaled_model, m)
-
     display_results(m)
 
-    return m, res
+    return m, results
 
 
 def build():
@@ -657,55 +652,57 @@ def set_scaling(m):
     )
 
 
-def initialize_system(m):
+def initialize_system(m, solver_name="ipopt_v2", solver_options=None):
     """
     Initialize system.
 
     Args:
         m: pyomo model
+        solver_name: name of the solver to retrieve using get_solver
+        solver_options: dictionary of options to use with designated solver
     """
 
     ### Initialize Feed and propagate state to Dissolution Stage
-    m.fs.FEED.initialize()
+    m.fs.FEED.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.FEED_Diss)
 
     ### Initialize Dissolution Stage and propagate state to S101
-    m.fs.Dissolution.initialize()
+    m.fs.Dissolution.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Diss_S101)
 
     ### Initialize S101 and propagate state to pH adjustment stage mixer
-    m.fs.S101.initialize()
+    m.fs.S101.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.S101_AdjMixer)
 
     # # Initialize pH Adjustment feed and propagate state to mixer
-    m.fs.AdjFeed.initialize()
+    m.fs.AdjFeed.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.AdjFeed_AdjMixer)
 
     # # Initialize pH Adjustment mixer and propagate state to reactor
-    m.fs.AdjMixer.initialize()
+    m.fs.AdjMixer.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.AdjMixer_Adjustment)
 
     # # Initialize pH Adjustment reactor and propagate state to precipitation stage mixer
-    m.fs.Adjustment.initialize()
+    m.fs.Adjustment.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Adjustment_PrecipMixer)
 
     # Initialize precipitation stage feed and propagate state to precipitation stage mixer
-    m.fs.PrecipFeed.initialize()
+    m.fs.PrecipFeed.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.PrecipFeed_PrecipMixer)
 
     # Initialize precipitation stage feed and propagate state to precipitation stage reactor
-    m.fs.PrecipMixer.initialize()
+    m.fs.PrecipMixer.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.PrecipMixer_Precipitation)
 
     # Initialize precipitation stage reactor
-    m.fs.Precipitation.initialize()
+    m.fs.Precipitation.initialize(solver=solver_name, optarg=solver_options)
     propagate_state(arc=m.fs.Precipitation_S102)
 
     ### Initialize S102
-    m.fs.S102.initialize()
+    m.fs.S102.initialize(solver=solver_name, optarg=solver_options)
 
     # Initialize precipitation stage calcinator
-    m.fs.Calcination.initialize()
+    m.fs.Calcination.initialize(solver=solver_name, optarg=solver_options)
 
 
 def solve_system(m, tee=False):
@@ -715,7 +712,7 @@ def solve_system(m, tee=False):
         tee: boolean indicator to stream IPOPT solution
     """
     # Solve flowsheet
-    solver_obj = get_solver()
+    solver_obj = get_solver("ipopt_v2")
 
     results = solver_obj.solve(m, tee=tee)
 

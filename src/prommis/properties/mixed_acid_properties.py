@@ -93,6 +93,49 @@ _all_components_mw = {
 }
 
 
+def get_aliases(include_sulfates: bool = False, include_oxalates: bool = False) -> dict:
+    """
+    Helper function to provide a dictionary to translate between
+    the species names that were used previously and the new names
+    (including the ionic charge) used in this property package.
+
+    Args:
+        include_sulfates: Boolean flag about whether to include
+            sulfate and bisulfate in alias dictionary.
+        include_oxalates: Boolean flag about whether to include
+            oxalic acid, hydrogen oxalate, and oxalate in alias
+            dictionary. Oxalate species were always written with their
+            ionic charge, so they map to themselves.
+    Returns:
+        A dictionary of the form alias_dict[old_name] = new_name.
+    """
+    alias_dict = {
+        "H2O": "H2O",
+        "H": "H_+",
+        "Cl": "Cl_-",
+        "Sc": "Sc_3+",
+        "Y": "Y_3+",
+        "La": "La_3+",
+        "Ce": "Ce_3+",
+        "Pr": "Pr_3+",
+        "Nd": "Nd_3+",
+        "Sm": "Sm_3+",
+        "Gd": "Gd_3+",
+        "Dy": "Dy_3+",
+        "Al": "Al_3+",
+        "Ca": "Ca_2+",
+        "Fe": "Fe_3+",
+    }
+    if include_sulfates:
+        alias_dict["SO4"] = "SO4_2-"
+        alias_dict["HSO4"] = "HSO4_-"
+    if include_oxalates:
+        alias_dict["H2C2O4"] = "H2C2O4"
+        alias_dict["HC2O4_-"] = "HC2O4_-"
+        alias_dict["C2O4_2-"] = "C2O4_2-"
+    return alias_dict
+
+
 class MixedAcidPropertiesScaler(CustomScalerBase):
     """
     Scaler for leach solution property package.

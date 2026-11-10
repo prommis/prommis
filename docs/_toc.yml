@@ -19,5 +19,7 @@ chapters:
       - file: tutorials/diafiltration_flowsheet_optimization_tutorial-solution
       - file: tutorials/diafiltration_cost_uncertainty_quantification_and_propagation-solution
       - file: tutorials/detailed_chemistry_integration_tutorial-solution
+      - file: tutorials/precipitation_isotherm_parameter_estimation_tutorial
+      - file: tutorials/precipitation_isotherm_unit_model_tutorial
   - file: license.rst
   - file: copyright.rst

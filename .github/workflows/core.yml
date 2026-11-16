@@ -58,19 +58,12 @@ jobs:
           python-version: '3.11'
       - name: Install Black
         # unlike the other jobs, we don't need to install IDAES and/or all the dev dependencies,
-        # but we still want to specify the Black version to use in requirements-dev.txt for local development
-        # so we extract the relevant line and pass it to a simple `pip install`
         run: |
-          # we store the version
-          black_requirement="$(grep 'black.*==' requirements-dev.txt)"
-          pip install "$black_requirement"
+          pip install black[jupyter]
 
       - name: Print Black version
         run: |
           black_version=$(black --version)
-          echo "Installed Black version: $black_version from requirements-dev.txt"
-          echo "Ensure that the local version of Black matches this version for consistent formatting."
-
       - name: Run Black to verify that the committed code is formatted
         run: |
           black --check .

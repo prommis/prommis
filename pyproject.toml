@@ -32,7 +32,7 @@ keywords = [
     "process modeling",
 ]
 dynamic = ["version"]
-dependencies = ["idaes-pse>=2.13.0", "pyomo >=6.9.5"]
+dependencies = ["idaes-pse>=2.13.0", "pyomo >=6.10.1"]
 [project.optional-dependencies]
 watertap = ["watertap[reaktoro]>=1.8.0"]
 
@@ -42,7 +42,7 @@ ui = ["prommis[flowsheet-processor]", "idaes-ui", "idaes-connectivity"]
 
 dev = [
     "prommis[watertap,ui]",
-    "black[jupyter]==26.3.1",
+    "black[jupyter]",
     "pylint==2.17.7",
     "astroid==2.15.8",
     "pytest==7.*",

@@ -33,11 +33,6 @@ from idaes.core import declare_process_block_class
 from idaes.core.base.costing_base import UnitModelCostingBlock
 from idaes.models.costing.QGESS import QGESSCostingData
 
-# this is a duplicate reference to reporting method in IDAES, remove later
-from idaes.models_extra.power_generation.costing.power_plant_costing_dictionaries import (
-    report,
-)
-
 from prommis.costing.ree_costing_dictionaries import (
     load_default_resource_prices,
     load_default_sale_prices,
@@ -163,41 +158,12 @@ class REECostingData(QGESSCostingData):
         # Set a base period for all operating costs
         self.base_period = pyunits.year
 
-        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
-        if isinstance(self.Lang_factor, Expression):
-            installation_components = {
-                "piping_materials_and_labor_percentage": 20,
-                "electrical_materials_and_labor_percentage": 20,
-                "instrumentation_percentage": 8,
-                "plants_services_percentage": 10,
-                "process_buildings_percentage": 40,
-                "auxiliary_buildings_percentage": 15,
-                "site_improvements_percentage": 10,
-                "equipment_installation_percentage": 17,
-                "field_expenses_percentage": 12,
-                "project_management_and_construction_percentage": 30,
-                "process_contingency_percentage": 15,
-            }
-
-            delattr(self, "Lang_factor")
-            self.Lang_factor = Expression(
-                expr=pyunits.convert(
-                    sum(
-                        self.installation_components[k] for k in installation_components
-                    ),
-                    to_units=pyunits.dimensionless,
-                )
-                + 1  # added this
-            )
-
     def build_REE_process_costs(self, **kwargs):
         """
         Wrapper method for building PrOMMiS REE process costs.
 
         Passes to QGESS build_process_costs() and sets some defaults
         """
-
-        # TODO change to use additional dictionary arguments instead of looping through prices
 
         REE_resource_prices = load_default_resource_prices()
 
@@ -225,84 +191,6 @@ class REECostingData(QGESSCostingData):
 
         QGESSCostingData.build_process_costs(self, **kwargs)
 
-        # TODO remove, mock some changes that need to patched into the IDAES QGESS module later
-        if hasattr(self, "total_TPC_eq"):
-            delattr(self, "total_TPC_eq")
-
-            @self.Constraint()
-            def total_TPC_eq(c):
-                # TPC = BEC that needs Lang factor applied to get TPC + TPC that is already calculated
-                # apply location factor and economy of numbers here too
-                return c.total_TPC == (
-                    (
-                        (
-                            (sum(c.BEC_list) - sum(c.BEC_blocks_with_TPC_list))
-                            * c.Lang_factor
-                            + sum(c.TPC_blocks_with_TPC_list)
-                        )
-                        + c.other_plant_costs  # added this
-                    )
-                    # apply economy of numbers if enabled
-                    * (
-                        c.NOAK_factor if c.config.has_economy_of_numbers else 1
-                    )  # applied to whole TPC
-                    * c.location_factor
-                )
-
-        if hasattr(self, "total_variable_cost_eq"):
-            delattr(self, "total_variable_cost_eq")
-
-            @self.Constraint(self.parent_block().time)
-            def total_variable_cost_eq(c, t):
-                return (
-                    c.total_variable_OM_cost[t]
-                    == sum(
-                        c.variable_operating_costs[t, r] for r in kwargs["resources"]
-                    )
-                    + (
-                        c.plant_overhead_cost[t]
-                        if hasattr(c, "plant_overhead_cost")
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.land_cost
-                        if c.land_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.additional_chemicals_cost
-                        if c.additional_chemicals_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + (
-                        c.additional_waste_cost
-                        if c.additional_waste_cost_reoccurrence == "annual"
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    # for power plants, include maintenance material costs here if defined
-                    + (
-                        c.maintenance_material_cost
-                        if hasattr(c, "maintenance_material_cost")
-                        else 0 * c.CEPCI_units / pyunits.year
-                    )
-                    + c.other_variable_costs[t]  # added this
-                    + c.custom_variable_costs  # added this
-                )
-
-        if hasattr(self, "capex"):  # this is used for the NPV calculation
-            delattr(self, "capex")
-            self.capex = Expression(
-                expr=(
-                    self.total_TPC
-                    # removed double counting of other_plant_costs
-                    + (
-                        self.land_cost
-                        if self.land_cost_reoccurrence == "one_time"
-                        else 0 * self.CEPCI_units
-                    )
-                )
-            )
-
     def get_total_BEC(self):
         """Return the total bare erected cost, creating it if necessary."""
         if not hasattr(self, "total_BEC"):
@@ -318,127 +206,6 @@ class REECostingData(QGESSCostingData):
             )
 
         return self.total_BEC
-
-    # TODO display_flowsheet_cost to be moved to QGESS.py
-    def display_flowsheet_cost(
-        self,
-        feedstock_rate,
-        production_rate,
-    ):
-        """Display flowsheet-level capital and operating costs.
-
-        Args:
-            feedstock_rate: Mass flow rate of feed entering the process.
-            production_rate: Annual mass flow rate of recovered product.
-        """
-        self.get_total_BEC()
-
-        # Variable O&M is calculated at full capacity. Apply the capacity
-        # factor to obtain the cost at the actual operating capacity.
-        annual_variable_OM_cost = self.total_variable_OM_cost[0] * self.capacity_factor
-        annual_OM_cost = self.total_fixed_OM_cost + annual_variable_OM_cost
-        total_annualized_plant_cost = (
-            self.annualized_cost + annual_OM_cost * pyunits.year
-        )
-
-        print("\n")
-
-        # Capital costs
-        print(
-            "Total bare erected cost (MUSD): %.3f" % value(self.total_BEC),
-        )
-
-        if hasattr(self, "total_overnight_capital"):
-            print(
-                "Total overnight (installed) equipment cost (MUSD): %.3f"
-                % value(self.total_overnight_capital),
-            )
-
-        if hasattr(self, "annualized_cost"):
-            print(
-                "Total annualized capital cost (MUSD/year): %.3f"
-                % value(self.annualized_cost),
-            )
-
-        print()
-
-        # Operating costs
-        if hasattr(self, "total_fixed_OM_cost"):
-            print(
-                "Total annual fixed O&M cost (MUSD/year): %.3f"
-                % value(self.total_fixed_OM_cost),
-            )
-
-        if hasattr(self, "total_variable_OM_cost"):
-            print(
-                "Total annual variable O&M cost at full capacity "
-                "(MUSD/year): %.3f" % value(self.total_variable_OM_cost[0]),
-            )
-            print(
-                "Total annual variable O&M cost at operating capacity "
-                "(MUSD/year): %.3f" % value(annual_variable_OM_cost),
-            )
-
-        print(
-            "Total annual O&M cost (MUSD/year): %.3f" % value(annual_OM_cost),
-        )
-
-        annual_OM_cost_per_ton = pyunits.convert(
-            annual_OM_cost / (feedstock_rate * self.capacity_factor),
-            to_units=self.base_currency / pyunits.ton,
-        )
-        print(
-            "Total annual O&M cost per ton feed processed (USD/ton): %.3f"
-            % value(annual_OM_cost_per_ton),
-        )
-
-        annual_OM_cost_per_kg = pyunits.convert(
-            annual_OM_cost / production_rate,
-            to_units=self.base_currency / pyunits.kg,
-        )
-        print(
-            "Total annual O&M cost per kg REE recovered (USD/kg): %.3f"
-            % value(annual_OM_cost_per_kg),
-        )
-
-        print()
-
-        print(
-            "Total annualized plant cost (MUSD/year): %.3f"
-            % value(total_annualized_plant_cost),
-        )
-        print(
-            "Annual rate of recovery (kg/year): %.3f"
-            % value(
-                pyunits.convert(
-                    production_rate,
-                    to_units=pyunits.kg / pyunits.year,
-                )
-            ),
-        )
-
-        cost_of_recovery = pyunits.convert(
-            total_annualized_plant_cost / (production_rate * pyunits.year),
-            to_units=self.base_currency / pyunits.kg,
-        )
-        print(
-            "Cost of recovery per kg REE recovered (USD/kg): %.3f"
-            % value(cost_of_recovery),
-        )
-
-        print()
-
-        if hasattr(self, "npv"):
-            print("Net present value (MUSD): %.3f" % value(self.npv))
-
-        print("\n")
-
-    # TODO remove, mock reference to report method that needs to be patched into IDAES QGESS
-    def report(self, export=False):
-        """
-        Call report method.
-        """
-        return report(self, export=export)
 
     def calculate_REE_costing_bounds(
         b,
